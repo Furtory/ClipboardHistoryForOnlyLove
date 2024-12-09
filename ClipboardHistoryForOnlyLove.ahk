@@ -10,7 +10,7 @@ AHK正版官方论坛https://www.autohotkey.com/boards/viewforum.php?f=26
 管理员模式:
     IfExist, %A_ScriptDir%\History.ini ;如果配置文件存在则读取
     {
-        IniRead, AdminMode, History.ini, Settings, 管理权限
+        IniRead AdminMode, History.ini, Settings, 管理权限
         if (AdminMode=1)
         {
             ShellExecute := A_IsUnicode ? "shell32\ShellExecute":"shell32\ShellExecuteA"
@@ -26,8 +26,8 @@ AHK正版官方论坛https://www.autohotkey.com/boards/viewforum.php?f=26
         }
     }
 
-    SendMode, Event
-    Process, Priority, , Realtime
+    SendMode Event
+    Process Priority, , Realtime
     #MenuMaskKey vkE8
     #WinActivateForce
     #InstallKeybdHook
@@ -37,22 +37,22 @@ AHK正版官方论坛https://www.autohotkey.com/boards/viewforum.php?f=26
     #SingleInstance Force
     #MaxHotkeysPerInterval 2000
     #KeyHistory 2000
-    CoordMode, Mouse, Screen
-    CoordMode, Menu, Screen
+    CoordMode Mouse, Screen
+    CoordMode Menu, Screen
     SetBatchLines -1
-    SetKeyDelay, 30, 50 ; 按键按住时间 和 按键发送间隔 不宜太短 VS code 响应不过来
+    SetKeyDelay 30, 50 ; 按键按住时间 和 按键发送间隔 不宜太短 VS code 响应不过来
 
-    Menu, Tray, Icon, %A_ScriptDir%\LOGO.ico
-    Menu, Tray, NoStandard ;不显示默认的AHK右键菜单
-    Menu, Tray, Add, 使用教程, 使用教程 ;添加新的右键菜单
-    Menu, Tray, Add
-    Menu, Tray, Add, 管理权限, 管理权限 ;添加新的右键菜单
-    Menu, Tray, Add, 开机自启, 开机自启 ;添加新的右键菜单
-    Menu, Tray, Add, 中键呼出, 中键呼出 ;添加新的右键菜单
-    Menu, Tray, Add, 智能帮助, 智能帮助 ;添加新的右键菜单
-    Menu, Tray, Add
-    Menu, Tray, Add, 重启软件, 重启软件 ;添加新的右键菜单
-    Menu, Tray, Add, 退出软件, 退出软件 ;添加新的右键菜单
+    Menu Tray, Icon, %A_ScriptDir%\LOGO.ico
+    Menu Tray, NoStandard ;不显示默认的AHK右键菜单
+    Menu Tray, Add, 使用教程, 使用教程 ;添加新的右键菜单
+    Menu Tray, Add
+    Menu Tray, Add, 管理权限, 管理权限 ;添加新的右键菜单
+    Menu Tray, Add, 开机自启, 开机自启 ;添加新的右键菜单
+    Menu Tray, Add, 中键呼出, 中键呼出 ;添加新的右键菜单
+    Menu Tray, Add, 智能帮助, 智能帮助 ;添加新的右键菜单
+    Menu Tray, Add
+    Menu Tray, Add, 重启软件, 重启软件 ;添加新的右键菜单
+    Menu Tray, Add, 退出软件, 退出软件 ;添加新的右键菜单
 
     MaxItem:=30 ; 最大条目数量
 
@@ -60,12 +60,12 @@ AHK正版官方论坛https://www.autohotkey.com/boards/viewforum.php?f=26
     IfExist, % autostartLnk ;检查开机启动的文件是否存在
     {
         autostart:=1
-        Menu, Tray, Check, 开机自启 ;右键菜单打勾
+        Menu Tray, Check, 开机自启 ;右键菜单打勾
     }
     Else
     {
         autostart:=0
-        Menu, Tray, UnCheck, 开机自启 ;右键菜单不打勾
+        Menu Tray, UnCheck, 开机自启 ;右键菜单不打勾
     }
 
     ; 定义全局变量用于存储剪贴板历史
@@ -74,40 +74,33 @@ AHK正版官方论坛https://www.autohotkey.com/boards/viewforum.php?f=26
     IfExist, %A_ScriptDir%\History.ini
     {
         ; 读取剪贴板设置
-        IniRead, AdminMode, Settings.ini, 设置, 管理权限 ;从ini文件读取设置
-        if (AdminMode=0)
-        {
-            Menu, Tray, UnCheck, 管理权限 ;右键菜单不打勾
-        }
-        Else
-        {
-            Menu, Tray, Check, 管理权限 ;右键菜单打勾
-        }
+        if (AdminMode=1)
+            Menu Tray, Check, 管理权限 ;右键菜单打勾
 
-        IniRead, TopMenuCount, History.ini, Setting, TopMenuCount
+        IniRead TopMenuCount, History.ini, Setting, TopMenuCount
 
-        Hotkey, $Mbutton, 中键
-        Iniread, 中键呼出, History.ini, Settings, 中键呼出 ;写入设置到ini文件
+        Hotkey $Mbutton, 中键
+        Iniread 中键呼出, History.ini, Settings, 中键呼出 ;写入设置到ini文件
         if (中键呼出=1)
         {
-            Menu, Tray, Check, 中键呼出 ;右键菜单打勾
+            Menu Tray, Check, 中键呼出 ;右键菜单打勾
         }
         Else
         {
-            Hotkey, $Mbutton, Off
+            Hotkey $Mbutton, Off
         }
 
-        Iniread, 智能帮助, History.ini, Settings, 智能帮助 ;写入设置到ini文件
+        Iniread 智能帮助, History.ini, Settings, 智能帮助 ;写入设置到ini文件
         if (智能帮助=1)
-            Menu, Tray, Check, 智能帮助 ;右键菜单打勾
+            Menu Tray, Check, 智能帮助 ;右键菜单打勾
         Else
-            Hotkey, $F1, Off
+            Hotkey $F1, Off
 
         ; 读取剪贴板历史
         ClipboardAlreadyRecorded:=1
         Loop %MaxItem% ; 最大条目数量
         {
-            IniRead, ReadHistory, History.ini, History, ClipboardHistory%A_Index%
+            IniRead ReadHistory, History.ini, History, ClipboardHistory%A_Index%
             ; ToolTip, ReadHistory`n%ReadHistory%
             ; Sleep, 1000
             if (ReadHistory="") Or (ReadHistory="ERROR") ; 如果该项不存在，则停止读取
@@ -131,29 +124,29 @@ AHK正版官方论坛https://www.autohotkey.com/boards/viewforum.php?f=26
                 ; Sleep, 100
                 if (StrLen(NewClipboard)>30) ;菜单名称限制字符串长度
                     NewClipboard:=SubStr(StrReplace(NewClipboard, "`r`n", ""), 1, 30) ; 去掉复制内容中的CRLF换行
-                Menu, ClipboardHistoryMenu, Add, %NewClipboard%, ClipTheHistoryRecord, Radio ; 添加菜单
+                Menu ClipboardHistoryMenu, Add, %NewClipboard%, ClipTheHistoryRecord, Radio ; 添加菜单
 
                 if (A_Index<=TopMenuCount)
-                    Menu, ClipboardHistoryMenu, Check, %NewClipboard% ; 给顶置菜单打上点作为标识
+                    Menu ClipboardHistoryMenu, Check, %NewClipboard% ; 给顶置菜单打上点作为标识
 
                 if (A_Index=TopMenuCount)
-                    Menu, ClipboardHistoryMenu, Add ; 顶置菜单和非顶置菜单之间增加一条分割线
+                    Menu ClipboardHistoryMenu, Add ; 顶置菜单和非顶置菜单之间增加一条分割线
             }
         }
     }
     Else
     {
         TopMenuCount:=0
-        IniWrite, %TopMenuCount%, History.ini, Setting, TopMenuCount ;写入设置到ini文件
+        IniWrite %TopMenuCount%, History.ini, Setting, TopMenuCount ;写入设置到ini文件
 
         AdminMode:=0
-        IniWrite, %AdminMode%, History.ini, Settings, 管理权限 ;写入设置到ini文件
+        IniWrite %AdminMode%, History.ini, Settings, 管理权限 ;写入设置到ini文件
 
         中键呼出:=0
-        IniWrite, %中键呼出%, History.ini, Settings, 中键呼出 ;写入设置到ini文件
+        IniWrite %中键呼出%, History.ini, Settings, 中键呼出 ;写入设置到ini文件
 
         智能帮助:=0
-        IniWrite, %智能帮助%, History.ini, Settings, 智能帮助 ;写入设置到ini文件
+        IniWrite %智能帮助%, History.ini, Settings, 智能帮助 ;写入设置到ini文件
     }
 
     ; 软件初始运行时记录当前的剪贴板内容
@@ -169,16 +162,16 @@ return
     if (AdminMode=1)
     {
         AdminMode:=0
-        IniWrite, %AdminMode%, History.ini, Settings, 管理权限 ;写入设置到ini文件
-        Menu, Tray, UnCheck, 管理权限 ;右键菜单不打勾
+        IniWrite %AdminMode%, History.ini, Settings, 管理权限 ;写入设置到ini文件
+        Menu Tray, UnCheck, 管理权限 ;右键菜单不打勾
         Critical, Off
         Reload
     }
     Else
     {
         AdminMode:=1
-        IniWrite, %AdminMode%, History.ini, Settings, 管理权限 ;写入设置到ini文件
-        Menu, Tray, Check, 管理权限 ;右键菜单打勾
+        IniWrite %AdminMode%, History.ini, Settings, 管理权限 ;写入设置到ini文件
+        Menu Tray, Check, 管理权限 ;右键菜单打勾
         Critical, Off
         Reload
     }
@@ -190,29 +183,29 @@ return
     {
         IfExist, % autostartLnk ;如果开机启动的文件存在
         {
-            FileDelete, %autostartLnk% ;删除开机启动的文件
+            FileDelete %autostartLnk% ;删除开机启动的文件
         }
 
         autostart:=0
-        Menu, Tray, UnCheck, 开机自启 ;右键菜单不打勾
+        Menu Tray, UnCheck, 开机自启 ;右键菜单不打勾
     }
     Else ;开启开机自启动
     {
         IfExist, % autostartLnk ;如果开机启动的文件存在
         {
-            FileGetShortcut, %autostartLnk%, lnkTarget ;获取开机启动文件的信息
+            FileGetShortcut %autostartLnk%, lnkTarget ;获取开机启动文件的信息
             if (lnkTarget!=A_ScriptFullPath) ;如果启动文件执行的路径和当前脚本的完整路径不一致
             {
-                FileCreateShortcut, %A_ScriptFullPath%, %autostartLnk%, %A_WorkingDir% ;将启动文件执行的路径改成和当前脚本的完整路径一致
+                FileCreateShortcut %A_ScriptFullPath%, %autostartLnk%, %A_WorkingDir% ;将启动文件执行的路径改成和当前脚本的完整路径一致
             }
         }
         Else ;如果开机启动的文件不存在
         {
-            FileCreateShortcut, %A_ScriptFullPath%, %autostartLnk%, %A_WorkingDir% ;创建和当前脚本的完整路径一致的启动文件
+            FileCreateShortcut %A_ScriptFullPath%, %autostartLnk%, %A_WorkingDir% ;创建和当前脚本的完整路径一致的启动文件
         }
 
         autostart:=1
-        Menu, Tray, Check, 开机自启 ;右键菜单打勾
+        Menu Tray, Check, 开机自启 ;右键菜单打勾
     }
     Critical, Off
 return
@@ -222,16 +215,16 @@ return
     if (中键呼出=1)
     {
         中键呼出:=0
-        Hotkey, $Mbutton, Off
-        IniWrite, %中键呼出%, History.ini, Settings, 中键呼出 ;写入设置到ini文件
-        Menu, Tray, UnCheck, 中键呼出 ;右键菜单不打勾
+        Hotkey $Mbutton, Off
+        IniWrite %中键呼出%, History.ini, Settings, 中键呼出 ;写入设置到ini文件
+        Menu Tray, UnCheck, 中键呼出 ;右键菜单不打勾
     }
     Else
     {
         中键呼出:=1
-        Hotkey, $Mbutton, On
-        IniWrite, %中键呼出%, History.ini, Settings, 中键呼出 ;写入设置到ini文件
-        Menu, Tray, Check, 中键呼出 ;右键菜单打勾
+        Hotkey $Mbutton, On
+        IniWrite %中键呼出%, History.ini, Settings, 中键呼出 ;写入设置到ini文件
+        Menu Tray, Check, 中键呼出 ;右键菜单打勾
     }
     Critical, Off
 return
@@ -241,17 +234,17 @@ return
     if (智能帮助=1)
     {
         智能帮助:=0
-        Hotkey, $F1, Off
-        IniWrite, %Adm智能帮助inMode%, History.ini, Settings, 智能帮助 ;写入设置到ini文件
-        Menu, Tray, UnCheck, 智能帮助 ;右键菜单不打勾
+        Hotkey $F1, Off
+        IniWrite %Adm智能帮助inMode%, History.ini, Settings, 智能帮助 ;写入设置到ini文件
+        Menu Tray, UnCheck, 智能帮助 ;右键菜单不打勾
 
     }
     Else
     {
         智能帮助:=1
-        Hotkey, $F1, On
-        IniWrite, %智能帮助%, History.ini, Settings, 智能帮助 ;写入设置到ini文件
-        Menu, Tray, Check, 智能帮助 ;右键菜单打勾
+        Hotkey $F1, On
+        IniWrite %智能帮助%, History.ini, Settings, 智能帮助 ;写入设置到ini文件
+        Menu Tray, Check, 智能帮助 ;右键菜单打勾
     }
     Critical, Off
 return
@@ -283,7 +276,7 @@ Return
         Else if (A_TickCount-ClipboardGetTickCount>1000) ; 超时
             Return
 
-        Sleep, 30
+        Sleep 30
     }
     OldClipboardHistory := A_Clipboard ; 此处需要更新记录用于下次对比
 
@@ -301,11 +294,11 @@ Return
 
     ; 剪贴板记录保存到本地ini配置文件内 注意应当把换行CR-LF给替换为不换行文本储存 需要逆序
     Loop, % ClipboardHistory.MaxIndex()
-        IniWrite, % StrReplace(ClipboardHistory[ClipboardHistory.MaxIndex()+1-A_Index], "`r`n", "``r``n"), History.ini, History, ClipboardHistory%A_Index%
+        IniWrite % StrReplace(ClipboardHistory[ClipboardHistory.MaxIndex()+1-A_Index], "`r`n", "``r``n"), History.ini, History, ClipboardHistory%A_Index%
 
     ; 如果有记录则先清空旧条目再生成新条目
     if (ClipboardAlreadyRecorded=1)
-        Menu, ClipboardHistoryMenu, DeleteAll
+        Menu ClipboardHistoryMenu, DeleteAll
 
     ; 添加历史记录数组为新条目到剪贴板历史GUI
     Loop % ClipboardHistory.MaxIndex()
@@ -314,13 +307,13 @@ Return
         NewClipboard:=ClipboardHistory[A_Index] ;顺序
         if (StrLen(NewClipboard)>30) ;菜单名称限制字符串长度
             NewClipboard:=SubStr(NewClipboard, 1, 30)
-        Menu, ClipboardHistoryMenu, Add, %NewClipboard%, ClipTheHistoryRecord, Radio ; 添加菜单
+        Menu ClipboardHistoryMenu, Add, %NewClipboard%, ClipTheHistoryRecord, Radio ; 添加菜单
 
         if (A_Index<=TopMenuCount)
-            Menu, ClipboardHistoryMenu, Check, %NewClipboard% ; 给顶置菜单打上点作为标识
+            Menu ClipboardHistoryMenu, Check, %NewClipboard% ; 给顶置菜单打上点作为标识
 
         if (A_Index=TopMenuCount)
-            Menu, ClipboardHistoryMenu, Add ; 顶置菜单和非顶置菜单之间增加一条分割线
+            Menu ClipboardHistoryMenu, Add ; 顶置菜单和非顶置菜单之间增加一条分割线
     }
     ClipboardAlreadyRecorded:=1
 return
@@ -329,10 +322,10 @@ return
 中键:
 !v:: ; 使用 Alt+V 键作为触发显示剪贴板历史的快捷键
     ; 记录菜单显示位置
-    MouseGetPos, MouseInScreenX, MouseInScreenY
+    MouseGetPos MouseInScreenX, MouseInScreenY
     ; ToolTip, MouseInScreenX%MouseInScreenX%`nMouseInScreenY%MouseInScreenY%
     if (ClipboardAlreadyRecorded=1)
-        Menu, ClipboardHistoryMenu, Show
+        Menu ClipboardHistoryMenu, Show
 return
 
 ; 当用户从菜单选择一项时黏贴剪贴板内容
@@ -344,7 +337,7 @@ ClipTheHistoryRecord:
         {
             If (TopMenuCount>=1)
                 TopMenuCount := TopMenuCount-1
-            IniWrite, %TopMenuCount%, History.ini, Setting, TopMenuCount
+            IniWrite %TopMenuCount%, History.ini, Setting, TopMenuCount
 
             ; 获取菜单内容
             TopClipboard := ClipboardHistory[A_ThisMenuItemPos]
@@ -357,7 +350,7 @@ ClipTheHistoryRecord:
         {
             if (TopMenuCount<ClipboardHistory.MaxIndex())
                 TopMenuCount := TopMenuCount+1
-            IniWrite, %TopMenuCount%, History.ini, Setting, TopMenuCount
+            IniWrite %TopMenuCount%, History.ini, Setting, TopMenuCount
 
             ; 获取菜单内容
             TopClipboard := ClipboardHistory[A_ThisMenuItemPos-ExistTopMenu]
@@ -369,10 +362,10 @@ ClipTheHistoryRecord:
 
         ; 剪贴板记录保存到本地ini配置文件内 注意应当把换行CR-LF给替换为不换行文本储存 需要逆序
         Loop, % ClipboardHistory.MaxIndex()
-            IniWrite, % StrReplace(ClipboardHistory[ClipboardHistory.MaxIndex()+1-A_Index], "`r`n", "``r``n"), History.ini, History, ClipboardHistory%A_Index%
+            IniWrite % StrReplace(ClipboardHistory[ClipboardHistory.MaxIndex()+1-A_Index], "`r`n", "``r``n"), History.ini, History, ClipboardHistory%A_Index%
 
         ; 删除GUI菜单
-        Menu, ClipboardHistoryMenu, DeleteAll
+        Menu ClipboardHistoryMenu, DeleteAll
 
         ; 重新加载菜单
         Loop % ClipboardHistory.MaxIndex()
@@ -381,18 +374,18 @@ ClipTheHistoryRecord:
             NewClipboard:=ClipboardHistory[A_Index] ;顺序
             if (StrLen(NewClipboard)>30) ;菜单名称限制字符串长度
                 NewClipboard:=SubStr(NewClipboard, 1, 30)
-            Menu, ClipboardHistoryMenu, Add, %NewClipboard%, ClipTheHistoryRecord, Radio ; 添加菜单
+            Menu ClipboardHistoryMenu, Add, %NewClipboard%, ClipTheHistoryRecord, Radio ; 添加菜单
 
             if (A_Index<=TopMenuCount)
-                Menu, ClipboardHistoryMenu, Check, %NewClipboard% ; 给顶置菜单打上点作为标识
+                Menu ClipboardHistoryMenu, Check, %NewClipboard% ; 给顶置菜单打上点作为标识
 
             if (A_Index=TopMenuCount)
-                Menu, ClipboardHistoryMenu, Add ; 顶置菜单和非顶置菜单之间增加一条分割线
+                Menu ClipboardHistoryMenu, Add ; 顶置菜单和非顶置菜单之间增加一条分割线
         }
 
         ; 在上次显示菜单位置显示
-        Menu, ClipboardHistoryMenu, Show, %MouseInScreenX%, %MouseInScreenY%
-        KeyWait, LButton
+        Menu ClipboardHistoryMenu, Show, %MouseInScreenX%, %MouseInScreenY%
+        KeyWait LButton
     }
     Else If GetKeyState("Xbutton2", "P") ; 侧键上 向上移动所选菜单
     {
@@ -417,17 +410,17 @@ ClipTheHistoryRecord:
         Else
         {
             ; 在上次显示菜单位置显示
-            Menu, ClipboardHistoryMenu, Show, %MouseInScreenX%, %MouseInScreenY%
-            KeyWait, LButton
+            Menu ClipboardHistoryMenu, Show, %MouseInScreenX%, %MouseInScreenY%
+            KeyWait LButton
             return ; 菜单不可向上移动
         }
 
         ; 剪贴板记录保存到本地ini配置文件内 注意应当把换行CR-LF给替换为不换行文本储存 需要逆序
         Loop, % ClipboardHistory.MaxIndex()
-            IniWrite, % StrReplace(ClipboardHistory[ClipboardHistory.MaxIndex()+1-A_Index], "`r`n", "``r``n"), History.ini, History, ClipboardHistory%A_Index%
+            IniWrite % StrReplace(ClipboardHistory[ClipboardHistory.MaxIndex()+1-A_Index], "`r`n", "``r``n"), History.ini, History, ClipboardHistory%A_Index%
 
         ; 删除GUI菜单
-        Menu, ClipboardHistoryMenu, DeleteAll
+        Menu ClipboardHistoryMenu, DeleteAll
 
         ; 重新加载菜单
         Loop % ClipboardHistory.MaxIndex()
@@ -436,18 +429,18 @@ ClipTheHistoryRecord:
             NewClipboard:=ClipboardHistory[A_Index] ;顺序
             if (StrLen(NewClipboard)>30) ;菜单名称限制字符串长度
                 NewClipboard:=SubStr(NewClipboard, 1, 30)
-            Menu, ClipboardHistoryMenu, Add, %NewClipboard%, ClipTheHistoryRecord, Radio ; 添加菜单
+            Menu ClipboardHistoryMenu, Add, %NewClipboard%, ClipTheHistoryRecord, Radio ; 添加菜单
 
             if (A_Index<=TopMenuCount)
-                Menu, ClipboardHistoryMenu, Check, %NewClipboard% ; 给顶置菜单打上点作为标识
+                Menu ClipboardHistoryMenu, Check, %NewClipboard% ; 给顶置菜单打上点作为标识
 
             if (A_Index=TopMenuCount)
-                Menu, ClipboardHistoryMenu, Add ; 顶置菜单和非顶置菜单之间增加一条分割线
+                Menu ClipboardHistoryMenu, Add ; 顶置菜单和非顶置菜单之间增加一条分割线
         }
 
         ; 在上次显示菜单位置显示
-        Menu, ClipboardHistoryMenu, Show, %MouseInScreenX%, %MouseInScreenY%
-        KeyWait, LButton
+        Menu ClipboardHistoryMenu, Show, %MouseInScreenX%, %MouseInScreenY%
+        KeyWait LButton
     }
     Else If GetKeyState("Xbutton1", "P") ; 侧键下 向下移动所选菜单
     {
@@ -472,17 +465,17 @@ ClipTheHistoryRecord:
         Else
         {
             ; 在上次显示菜单位置显示
-            Menu, ClipboardHistoryMenu, Show, %MouseInScreenX%, %MouseInScreenY%
-            KeyWait, LButton
+            Menu ClipboardHistoryMenu, Show, %MouseInScreenX%, %MouseInScreenY%
+            KeyWait LButton
             return ; 菜单不可向下移动
         }
 
         ; 剪贴板记录保存到本地ini配置文件内 注意应当把换行CR-LF给替换为不换行文本储存 需要逆序
         Loop, % ClipboardHistory.MaxIndex()
-            IniWrite, % StrReplace(ClipboardHistory[ClipboardHistory.MaxIndex()+1-A_Index], "`r`n", "``r``n"), History.ini, History, ClipboardHistory%A_Index%
+            IniWrite % StrReplace(ClipboardHistory[ClipboardHistory.MaxIndex()+1-A_Index], "`r`n", "``r``n"), History.ini, History, ClipboardHistory%A_Index%
 
         ; 删除GUI菜单
-        Menu, ClipboardHistoryMenu, DeleteAll
+        Menu ClipboardHistoryMenu, DeleteAll
 
         ; 重新加载菜单
         Loop % ClipboardHistory.MaxIndex()
@@ -491,18 +484,18 @@ ClipTheHistoryRecord:
             NewClipboard:=ClipboardHistory[A_Index] ;顺序
             if (StrLen(NewClipboard)>30) ;菜单名称限制字符串长度
                 NewClipboard:=SubStr(NewClipboard, 1, 30)
-            Menu, ClipboardHistoryMenu, Add, %NewClipboard%, ClipTheHistoryRecord, Radio ; 添加菜单
+            Menu ClipboardHistoryMenu, Add, %NewClipboard%, ClipTheHistoryRecord, Radio ; 添加菜单
 
             if (A_Index<=TopMenuCount)
-                Menu, ClipboardHistoryMenu, Check, %NewClipboard% ; 给顶置菜单打上点作为标识
+                Menu ClipboardHistoryMenu, Check, %NewClipboard% ; 给顶置菜单打上点作为标识
 
             if (A_Index=TopMenuCount)
-                Menu, ClipboardHistoryMenu, Add ; 顶置菜单和非顶置菜单之间增加一条分割线
+                Menu ClipboardHistoryMenu, Add ; 顶置菜单和非顶置菜单之间增加一条分割线
         }
 
         ; 在上次显示菜单位置显示
-        Menu, ClipboardHistoryMenu, Show, %MouseInScreenX%, %MouseInScreenY%
-        KeyWait, LButton
+        Menu ClipboardHistoryMenu, Show, %MouseInScreenX%, %MouseInScreenY%
+        KeyWait LButton
     }
     Else If GetKeyState("Ctrl", "P") ; Ctrl 删除所选菜单
     {
@@ -510,7 +503,7 @@ ClipTheHistoryRecord:
         {
             If (TopMenuCount>=1)
                 TopMenuCount := TopMenuCount-1
-            IniWrite, %TopMenuCount%, History.ini, Setting, TopMenuCount
+            IniWrite %TopMenuCount%, History.ini, Setting, TopMenuCount
 
             ; 获取菜单内容
             TopClipboard := ClipboardHistory[A_ThisMenuItemPos]
@@ -527,14 +520,14 @@ ClipTheHistoryRecord:
 
         ; 清除ini文件
         Loop %MaxItem%
-            IniWrite, "", History.ini, History, ClipboardHistory%A_Index%
+            IniWrite "", History.ini, History, ClipboardHistory%A_Index%
 
         ; 剪贴板记录保存到本地ini配置文件内 注意应当把换行CR-LF给替换为不换行文本储存 需要逆序
         Loop, % ClipboardHistory.MaxIndex()
-            IniWrite, % StrReplace(ClipboardHistory[ClipboardHistory.MaxIndex()+1-A_Index], "`r`n", "``r``n"), History.ini, History, ClipboardHistory%A_Index%
+            IniWrite % StrReplace(ClipboardHistory[ClipboardHistory.MaxIndex()+1-A_Index], "`r`n", "``r``n"), History.ini, History, ClipboardHistory%A_Index%
 
         ; 删除GUI菜单
-        Menu, ClipboardHistoryMenu, DeleteAll
+        Menu ClipboardHistoryMenu, DeleteAll
 
         ; 重新加载菜单
         Loop % ClipboardHistory.MaxIndex()
@@ -543,18 +536,18 @@ ClipTheHistoryRecord:
             NewClipboard:=ClipboardHistory[A_Index] ;顺序
             if (StrLen(NewClipboard)>30) ;菜单名称限制字符串长度
                 NewClipboard:=SubStr(NewClipboard, 1, 30)
-            Menu, ClipboardHistoryMenu, Add, %NewClipboard%, ClipTheHistoryRecord, Radio ; 添加菜单
+            Menu ClipboardHistoryMenu, Add, %NewClipboard%, ClipTheHistoryRecord, Radio ; 添加菜单
 
             if (A_Index<=TopMenuCount)
-                Menu, ClipboardHistoryMenu, Check, %NewClipboard% ; 给顶置菜单打上点作为标识
+                Menu ClipboardHistoryMenu, Check, %NewClipboard% ; 给顶置菜单打上点作为标识
 
             if (A_Index=TopMenuCount)
-                Menu, ClipboardHistoryMenu, Add ; 顶置菜单和非顶置菜单之间增加一条分割线
+                Menu ClipboardHistoryMenu, Add ; 顶置菜单和非顶置菜单之间增加一条分割线
         }
 
         ; 在上次显示菜单位置显示
-        Menu, ClipboardHistoryMenu, Show, %MouseInScreenX%, %MouseInScreenY%
-        KeyWait, LButton
+        Menu ClipboardHistoryMenu, Show, %MouseInScreenX%, %MouseInScreenY%
+        KeyWait LButton
     }
     Else ; 按下的时候没有按住任何键 黏贴内容
     {
@@ -566,9 +559,9 @@ ClipTheHistoryRecord:
         Else
             Clipboard := ClipboardHistory[A_ThisMenuItemPos-ExistTopMenu] ;顺序
 
-        BlockInput, On
+        BlockInput On
         Send ^v ; 自动粘贴选中的历史项
-        BlockInput, Off
+        BlockInput Off
     }
 return
 
@@ -580,28 +573,28 @@ return
     ; 清除GUI菜单
     if (ClipboardAlreadyRecorded=1)
     {
-        Menu, ClipboardHistoryMenu, DeleteAll
+        Menu ClipboardHistoryMenu, DeleteAll
         ClipboardAlreadyRecorded:=0
     }
 
     ; 清除ini文件
     Loop %MaxItem%
-        IniWrite, "", History.ini, History, ClipboardHistory%A_Index%
+        IniWrite "", History.ini, History, ClipboardHistory%A_Index%
 
     ; 清除顶置菜单配置
     TopMenuCount:=0
-    IniWrite, %TopMenuCount%, History.ini, Setting, TopMenuCount
+    IniWrite %TopMenuCount%, History.ini, Setting, TopMenuCount
 
     Loop, 30
     {
-        ToolTip, 剪贴板历史已清除
-        Sleep, 30
+        ToolTip 剪贴板历史已清除
+        Sleep 30
     }
     ToolTip
 return
 
 ; 如果你需要添加白名单请复制下面这行代码填入对应的进程名
-#IfWinActive, ahk_exe Code.exe ; 以下代码只在指定软件内运行
+#IfWinActive ahk_exe Code.exe ; 以下代码只在指定软件内运行
 
 ; 强制半角
 $`::Send {Text}``
@@ -629,9 +622,9 @@ $+/::Send {Text}?
 
 ^d::
     ; 确保不是空内容
-    BlockInput, On
+    BlockInput On
     Send ^c ; 复制选择的内容
-    Send, {Ctrl Up}
+    Send {Ctrl Up}
     ClipWait 1
     if (ErrorLevel || Clipboard = "")
         return
@@ -645,7 +638,7 @@ $+/::Send {Text}?
         Else if (A_TickCount-ClipboardGetTickCount>100) ; 超时
             Break
 
-        Sleep, 10
+        Sleep 10
     }
 
     ClipboardChoosed:=A_Clipboard
@@ -667,14 +660,14 @@ $+/::Send {Text}?
             CopyCount:=A_TickCount
             loop
             {
-                ToolTip, CopyTimes%CopyTimes%
+                ToolTip CopyTimes%CopyTimes%
                 if GetKeyState("D", "P")
                 {
                     if (A_Index>1)
                         CopyTimes+=1
                     loop
                     {
-                        ToolTip, CopyTimes%CopyTimes%
+                        ToolTip CopyTimes%CopyTimes%
                         if !GetKeyState("D", "P")
                         {
                             CopyCount:=A_TickCount
@@ -703,27 +696,27 @@ $+/::Send {Text}?
             }
 
             NewClipboard .= NewClipboardEnd
-            BlockInput, off
+            BlockInput off
             Clipboard := NewClipboard
 
             ; If (Start) or (Test123) or (End)
             ; If (Start) and (Test456) and (End)
             ; If (Start) and (函数(ABC)>1+2+3) and (End)
 
-            Sleep, 100
+            Sleep 100
             Send ^v ; ClipboardChoosed
 
             loop 30
             {
-                ToolTip, CopyTimes%CopyTimes%
-                Sleep, 30
+                ToolTip CopyTimes%CopyTimes%
+                Sleep 30
             }
             ToolTip
         }
         Else
         {    
             Clipboard .= ClipboardChoosed
-            Sleep, 100
+            Sleep 100
             Send ^v ; ClipboardChoosed
         }
         ; ToolTip 没有换行
@@ -741,36 +734,36 @@ $+/::Send {Text}?
         }
         ; FirstCRLF:=InStr(ClipboardChoosed, "`r`n")
         ; ToolTip, CRLFcount%CRLFcount%`nFirstCRLF%FirstCRLF%
-        
+
         if (CRLFcount=1)
         {
             ; ToolTip % InStr(ClipboardChoosed, "`r`n")
             if (InStr(ClipboardChoosed, "`r`n")=1)
             {
-                Send, {End}
-                Sleep, 100
+                Send {End}
+                Sleep 100
             }
-            Send, {Shift Down}
-            Send, {Alt Down}
-            Sleep, 100
-            Send, {Down}
-            Send, {Shift up}
-            Send, {Alt up}
+            Send {Shift Down}
+            Send {Alt Down}
+            Sleep 100
+            Send {Down}
+            Send {Shift up}
+            Send {Alt up}
         }
         Else if (CRLFcount>1)
         {
-            Send, {Shift Down}
+            Send {Shift Down}
             FirstCRLF:=InStr(ClipboardChoosed, "`r`n")
             if (FirstCRLF=1)
             {
-                Send, {Right}
-                Sleep, 100
+                Send {Right}
+                Sleep 100
             }
-            Send, {Alt Down}
-            Sleep, 100
-            Send, {Down}
-            Send, {Shift up}
-            Send, {Alt up}
+            Send {Alt Down}
+            Sleep 100
+            Send {Down}
+            Send {Shift up}
+            Send {Alt up}
 
             NewClipboard:=StrReplace(ClipboardChoosed, "`r`n") ; 去掉复制内容中的CRLF换行
             NewClipboard:=StrReplace(NewClipboard, " ") ; 去掉复制内容中的空格
@@ -778,56 +771,56 @@ $+/::Send {Text}?
             EndBrace:=InStr(NewClipboard, "}", , 0)
             ; NewClipboardMax:=StrLen(NewClipboard)
             ; ToolTip, %NewClipboard%`nFirstBrace%FirstBrace% EndBrace%EndBrace% NewClipboardMax%NewClipboardMax%
-            
+
             if (FirstBrace=1) and (EndBrace=StrLen(NewClipboard))
             {
-                Sleep, 100
-                Send, {Up}
-                Send, {End}
-                Send, {Enter}
-                Send, {Text}else
-                Send, {Tab}
+                Sleep 100
+                Send {Up}
+                Send {End}
+                Send {Enter}
+                Send {Text}else
+                Send {Tab}
             }
         }
     }
-    Sleep, 100
+    Sleep 100
     Clipboard:=OldClipboardHistory
-    BlockInput, Off
-    KeyWait, Ctrl
-    Send, {Ctrl Up}
+    BlockInput Off
+    KeyWait Ctrl
+    Send {Ctrl Up}
 Return
 
 $Enter::
     EnterDown:=A_TickCount
-    BlockInput, On
-    Send, {Enter Up}
+    BlockInput On
+    Send {Enter Up}
     loop
     {
         if !GetKeyState("Enter", "P")
         {
-            Send, {Enter}
+            Send {Enter}
             Break
         }
         if (A_TickCount-EnterDown>300)
         {
-            Send, {Shift Down}
-            Sleep, 50
-            Send, {End}
-            Send, {Shift up}
-            Send, {Enter}
-            KeyWait, Enter
+            Send {Shift Down}
+            Sleep 50
+            Send {End}
+            Send {Shift up}
+            Send {Enter}
+            KeyWait Enter
             Break
         }
     }
-    BlockInput, Off
+    BlockInput Off
 Return
 
 ; 打开中文帮助并跳转至对应文档
 ; 功能修改自 智能F1 https://github.com/telppa/SciTE4AutoHotkey-Plus/tree/master
 $F1::
-    BlockInput, On
-    Send, ^c
-    BlockInput, Off
+    BlockInput On
+    Send ^c
+    BlockInput Off
 
     ; 等待新内容复制进来
     ClipboardGetTickCount:=A_TickCount
@@ -837,33 +830,33 @@ $F1::
             Break
         Else if (A_TickCount-ClipboardGetTickCount>1000) ; 超时
             Return
-        Sleep, 30
+        Sleep 30
     }
 
     AutoHotKeyHelpPath:=A_ScriptDir
     AutoHotKeyHelpPath.="\AutoHotkey.chm"
     if (PID="") or (PID="ERROR") or (WinExist("ahk_pid "PID)=0)                           ; 首次打开或窗口被最小化（为0）或窗口被关闭（为空）。
     {
-        Run, % AutoHotKeyHelpPath,,,PID                          ; 打开帮助文件。
-        WinWait, ahk_pid %PID%                             ; 这行不能少，否则初次打开无法输入文本并搜索。
-        WinActivate, ahk_pid %PID%                         ; 这行不能少，否则初次打开无法输入文本并搜索。
-        SysGet, WorkArea, MonitorWorkArea, 1               ; 获取工作区尺寸，即不含任务栏的屏幕尺寸。
+        Run % AutoHotKeyHelpPath,,,PID                          ; 打开帮助文件。
+        WinWait ahk_pid %PID%                             ; 这行不能少，否则初次打开无法输入文本并搜索。
+        WinActivate ahk_pid %PID%                         ; 这行不能少，否则初次打开无法输入文本并搜索。
+        SysGet WorkArea, MonitorWorkArea, 1               ; 获取工作区尺寸，即不含任务栏的屏幕尺寸。
         DPIScale:=A_ScreenDPI/96
         W:=(WorkAreaRight-WorkAreaLeft)//2
         X:=WorkAreaLeft+W+(-1+8)*DPIScale
         Y:=WorkAreaTop
         H:=WorkAreaBottom-Y+(-1+8)*DPIScale
-        WinMove, ahk_pid %PID%,, X, Y, W, H                ; 显示在屏幕右侧并占屏幕一半尺寸。
+        WinMove ahk_pid %PID%,, X, Y, W, H                ; 显示在屏幕右侧并占屏幕一半尺寸。
         oWB:=IE_GetWB(PID).document                        ; 获取帮助文件的对象。
     }
     Else
     {
-        WinGetPos, X, Y, W, H, ahk_pid %PID%
+        WinGetPos X, Y, W, H, ahk_pid %PID%
         if (X+Y+W+H=0) ; 帮助窗口最小化后无法激活，所以只能杀掉重开。
-            Process, Close, %PID% 
+            Process Close, %PID%
     }
-    WinActivate, ahk_pid %PID%                           ; 激活。
-    WinClose, 查找 ahk_pid %PID%                         ; 关掉查找窗口，它存在会无法切换结果。
+    WinActivate ahk_pid %PID%                           ; 激活。
+    WinClose 查找 ahk_pid %PID%                         ; 关掉查找窗口，它存在会无法切换结果。
 
     oWB.getElementsByTagName("BUTTON")[2].click()        ; 索引按钮。
     oWB.querySelector("INPUT").value := A_Clipboard             ; 输入关键词。
@@ -876,10 +869,10 @@ IE_GetWB(PID) { ; get the parent windows & coord from the element
     IID_IWebBrowserApp := "{0002DF05-0000-0000-C000-000000000046}"
         , IID_IHTMLWindow2 := "{332C4427-26CB-11D0-B483-00C04FD90119}"
 
-    WinGet, ControlListHwnd, ControlListHwnd, ahk_pid %PID%
+    WinGet ControlListHwnd, ControlListHwnd, ahk_pid %PID%
     for k, v in StrSplit(ControlListHwnd, "`n", "`r")
     {
-        WinGetClass, sClass, ahk_id %v%
+        WinGetClass sClass, ahk_id %v%
         if (sClass = "Internet Explorer_Server")
         {
             hCtl := v
