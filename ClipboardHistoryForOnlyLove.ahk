@@ -10,7 +10,7 @@ AHK正版官方论坛https://www.autohotkey.com/boards/viewforum.php?f=26
 管理员模式:
     IfExist, %A_ScriptDir%\History.ini ;如果配置文件存在则读取
     {
-        IniRead AdminMode, History.ini, Settings, 管理权限
+        IniRead AdminMode, History.ini, Settings, 管理权限 ;从ini文件读取
         if (AdminMode=1)
         {
             ShellExecute := A_IsUnicode ? "shell32\ShellExecute":"shell32\ShellExecuteA"
@@ -50,11 +50,10 @@ AHK正版官方论坛https://www.autohotkey.com/boards/viewforum.php?f=26
     Menu Tray, Add, 开机自启, 开机自启 ;添加新的右键菜单
     Menu Tray, Add, 中键呼出, 中键呼出 ;添加新的右键菜单
     Menu Tray, Add, 智能帮助, 智能帮助 ;添加新的右键菜单
+    Menu Tray, Add, 记录数量, 记录数量 ;添加新的右键菜单
     Menu Tray, Add
     Menu Tray, Add, 重启软件, 重启软件 ;添加新的右键菜单
     Menu Tray, Add, 退出软件, 退出软件 ;添加新的右键菜单
-
-    MaxItem:=30 ; 最大条目数量
 
     autostartLnk:=A_StartupCommon . "\ClipboardHistoryRecorder.lnk" ;开机启动文件的路径
     IfExist, % autostartLnk ;检查开机启动的文件是否存在
@@ -77,10 +76,10 @@ AHK正版官方论坛https://www.autohotkey.com/boards/viewforum.php?f=26
         if (AdminMode=1)
             Menu Tray, Check, 管理权限 ;右键菜单打勾
 
-        IniRead TopMenuCount, History.ini, Setting, TopMenuCount
+        IniRead TopMenuCount, History.ini, Setting, TopMenuCount ;从ini文件读取
 
         Hotkey $Mbutton, 中键
-        Iniread 中键呼出, History.ini, Settings, 中键呼出 ;写入设置到ini文件
+        Iniread 中键呼出, History.ini, Settings, 中键呼出 ;从ini文件读取
         if (中键呼出=1)
         {
             Menu Tray, Check, 中键呼出 ;右键菜单打勾
@@ -90,17 +89,19 @@ AHK正版官方论坛https://www.autohotkey.com/boards/viewforum.php?f=26
             Hotkey $Mbutton, Off
         }
 
-        Iniread 智能帮助, History.ini, Settings, 智能帮助 ;写入设置到ini文件
+        Iniread 智能帮助, History.ini, Settings, 智能帮助 ;从ini文件读取
         if (智能帮助=1)
             Menu Tray, Check, 智能帮助 ;右键菜单打勾
         Else
             Hotkey $F1, Off
 
+        Iniread MaxItem, History.ini, Settings, 记录数量 ;从ini文件读取
+
         ; 读取剪贴板历史
         ClipboardAlreadyRecorded:=1
         Loop %MaxItem% ; 最大条目数量
         {
-            IniRead ReadHistory, History.ini, History, ClipboardHistory%A_Index%
+            IniRead ReadHistory, History.ini, History, ClipboardHistory%A_Index% ;从ini文件读取
             ; ToolTip, ReadHistory`n%ReadHistory%
             ; Sleep, 1000
             if (ReadHistory="") Or (ReadHistory="ERROR") ; 如果该项不存在，则停止读取
@@ -147,6 +148,9 @@ AHK正版官方论坛https://www.autohotkey.com/boards/viewforum.php?f=26
 
         智能帮助:=0
         IniWrite %智能帮助%, History.ini, Settings, 智能帮助 ;写入设置到ini文件
+
+        MaxItem:=30 ; 最大条目数量
+        IniWrite %MaxItem%, History.ini, Settings, 记录数量 ;写入设置到ini文件
     }
 
     ; 软件初始运行时记录当前的剪贴板内容
@@ -248,6 +252,20 @@ return
     }
     Critical, Off
 return
+
+记录数量:
+    MaxItemRecord:=MaxItem
+    InputBox MaxItem, 剪贴板历史记录最大数量设置, 剪贴板历史记录最大数量设置`n超出后会把记录末尾的移除`n本地文件不会保存超过最大数量的记录, , , , , , Locale, ,%MaxItem%
+    if !ErrorLevel
+    {
+        if (MaxItem<=0)
+            MaxItem:=1
+        IniWrite %BlackList%, Settings.ini, 设置, 黑名单列表 ;写入设置到ini文件
+    }
+    else
+        MaxItem:=MaxItemRecord
+    IniWrite %MaxItem%, History.ini, Settings, 记录数量 ;写入设置到ini文件
+Return
 
 重启软件:
 Reload
