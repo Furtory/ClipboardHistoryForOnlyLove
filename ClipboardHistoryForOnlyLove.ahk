@@ -51,6 +51,7 @@ AHK正版官方论坛https://www.autohotkey.com/boards/viewforum.php?f=26
     Menu Tray, Add, 中键呼出, 中键呼出 ;添加新的右键菜单
     Menu Tray, Add, 智能帮助, 智能帮助 ;添加新的右键菜单
     Menu Tray, Add, 记录数量, 记录数量 ;添加新的右键菜单
+    Menu Tray, Add, 菜单宽度, 菜单宽度 ;添加新的右键菜单
     Menu Tray, Add
     Menu Tray, Add, 重启软件, 重启软件 ;添加新的右键菜单
     Menu Tray, Add, 退出软件, 退出软件 ;添加新的右键菜单
@@ -76,7 +77,7 @@ AHK正版官方论坛https://www.autohotkey.com/boards/viewforum.php?f=26
         if (AdminMode=1)
             Menu Tray, Check, 管理权限 ;右键菜单打勾
 
-        IniRead TopMenuCount, History.ini, Setting, TopMenuCount ;从ini文件读取
+        IniRead TopMenuCount, History.ini, Settings, TopMenuCount ;从ini文件读取
 
         Hotkey $Mbutton, 中键
         Iniread 中键呼出, History.ini, Settings, 中键呼出 ;从ini文件读取
@@ -96,6 +97,7 @@ AHK正版官方论坛https://www.autohotkey.com/boards/viewforum.php?f=26
             Hotkey $F1, Off
 
         Iniread MaxItem, History.ini, Settings, 记录数量 ;从ini文件读取
+        Iniread MenuLength, History.ini, Settings, 菜单宽度 ;从ini文件读取
 
         ; 读取剪贴板历史
         ClipboardAlreadyRecorded:=1
@@ -123,8 +125,12 @@ AHK正版官方论坛https://www.autohotkey.com/boards/viewforum.php?f=26
                 NewClipboard:=ClipboardHistory[A_Index] ;顺序
                 ; ToolTip, %A_Index%`nNewClipboard`n%NewClipboard%
                 ; Sleep, 100
-                if (StrLen(NewClipboard)>30) ;菜单名称限制字符串长度
-                    NewClipboard:=SubStr(StrReplace(NewClipboard, "`r`n", ""), 1, 30) ; 去掉复制内容中的CRLF换行
+                NewClipboard:=RegExReplace(NewClipboard, "\s{2,}", " ") ; 去掉复制内容中的空格
+                NewClipboard:=StrReplace(NewClipboard, "`r`n", A_Space) ; 去掉复制内容中的CRLF换行 转为空格显示
+                if (InStr(NewClipboard, A_Space)=1) ; 第一个是空格 提取第二个 菜单名称限制字符串长度
+                    NewClipboard:=SubStr(NewClipboard, 2, MenuLength)
+                else
+                    NewClipboard:=SubStr(NewClipboard, 1, MenuLength) ; 菜单名称限制字符串长度
                 Menu ClipboardHistoryMenu, Add, %NewClipboard%, ClipTheHistoryRecord, Radio ; 添加菜单
 
                 if (A_Index<=TopMenuCount)
@@ -138,7 +144,7 @@ AHK正版官方论坛https://www.autohotkey.com/boards/viewforum.php?f=26
     Else
     {
         TopMenuCount:=0
-        IniWrite %TopMenuCount%, History.ini, Setting, TopMenuCount ;写入设置到ini文件
+        IniWrite %TopMenuCount%, History.ini, Settings, TopMenuCount ;写入设置到ini文件
 
         AdminMode:=0
         IniWrite %AdminMode%, History.ini, Settings, 管理权限 ;写入设置到ini文件
@@ -151,6 +157,9 @@ AHK正版官方论坛https://www.autohotkey.com/boards/viewforum.php?f=26
 
         MaxItem:=30 ; 最大条目数量
         IniWrite %MaxItem%, History.ini, Settings, 记录数量 ;写入设置到ini文件
+
+        MenuLength:=50 ; 最大菜单宽度
+        IniWrite %MenuLength%, History.ini, Settings, 菜单宽度 ;写入设置到ini文件
     }
 
     ; 软件初始运行时记录当前的剪贴板内容
@@ -255,16 +264,85 @@ return
 
 记录数量:
     MaxItemRecord:=MaxItem
-    InputBox MaxItem, 剪贴板历史记录最大数量设置, 剪贴板历史记录最大数量设置`n超出后会把记录末尾的移除`n本地文件不会保存超过最大数量的记录, , , , , , Locale, ,%MaxItem%
+    InputBox MaxItem, 剪贴板历史记录最大数量设置, 剪贴板历史记录最大数量设置`n超出后会把记录末尾的移除`n本地文件不会保存超过最大数量的记录, , , 170, , , Locale, ,%MaxItem%
     if !ErrorLevel
     {
         if (MaxItem<=0)
             MaxItem:=1
-        IniWrite %BlackList%, Settings.ini, 设置, 黑名单列表 ;写入设置到ini文件
+        IniWrite %MaxItem%, History.ini, Settings, 记录数量 ;写入设置到ini文件
+
+        ; 清空超过MaxItem的数组和本地文件
+        if (ClipboardHistory.MaxIndex() > MaxItem)
+            loop % ClipboardHistory.MaxIndex()-MaxItem
+            {
+                RemoveItem:=MaxItem+A_Index
+                ClipboardHistory.RemoveAt(RemoveItem)
+                IniWrite "", History.ini, History, ClipboardHistory%RemoveItem%
+            }
+
+        ; 删除GUI菜单
+        if (ClipboardAlreadyRecorded=1)
+            Menu ClipboardHistoryMenu, DeleteAll
+
+        ; 重新加载菜单
+        Loop % ClipboardHistory.MaxIndex()
+        {
+            ; NewClipboard:=ClipboardHistory[ClipboardHistory.MaxIndex()+1-A_Index] ;逆序
+            NewClipboard:=ClipboardHistory[A_Index] ;顺序
+            NewClipboard:=RegExReplace(NewClipboard, "\s{2,}", " ") ; 去掉复制内容中的空格
+            NewClipboard:=StrReplace(NewClipboard, "`r`n", A_Space) ; 去掉复制内容中的CRLF换行 转为空格显示
+            if (InStr(NewClipboard, A_Space)=1) ; 第一个是空格 提取第二个 菜单名称限制字符串长度
+                NewClipboard:=SubStr(NewClipboard, 2, MenuLength)
+            else
+                NewClipboard:=SubStr(NewClipboard, 1, MenuLength) ; 菜单名称限制字符串长度
+            Menu ClipboardHistoryMenu, Add, %NewClipboard%, ClipTheHistoryRecord, Radio ; 添加菜单
+
+            if (A_Index<=TopMenuCount)
+                Menu ClipboardHistoryMenu, Check, %NewClipboard% ; 给顶置菜单打上点作为标识
+
+            if (A_Index=TopMenuCount)
+                Menu ClipboardHistoryMenu, Add ; 顶置菜单和非顶置菜单之间增加一条分割线
+        }
     }
     else
         MaxItem:=MaxItemRecord
-    IniWrite %MaxItem%, History.ini, Settings, 记录数量 ;写入设置到ini文件
+Return
+
+菜单宽度:
+    MenuLengthRecord:=MenuLength
+    InputBox MenuLength, 剪贴板历史记录菜单宽度设置, 剪贴板历史记录菜单宽度设置 单位字符`n菜单中多个空格转为一个空格显示`n菜单中换行会转为一个空格显示, , , 170, , , Locale, ,%MenuLength%
+    if !ErrorLevel
+    {
+        if (MenuLength<=0)
+            MenuLength:=1
+        IniWrite %MenuLength%, History.ini, Settings, 菜单宽度 ;写入设置到ini文件
+
+        ; 删除GUI菜单
+        if (ClipboardAlreadyRecorded=1)
+            Menu ClipboardHistoryMenu, DeleteAll
+
+        ; 重新加载菜单
+        Loop % ClipboardHistory.MaxIndex()
+        {
+            ; NewClipboard:=ClipboardHistory[ClipboardHistory.MaxIndex()+1-A_Index] ;逆序
+            NewClipboard:=ClipboardHistory[A_Index] ;顺序
+            NewClipboard:=RegExReplace(NewClipboard, "\s{2,}", " ") ; 去掉复制内容中的空格
+            NewClipboard:=StrReplace(NewClipboard, "`r`n", A_Space) ; 去掉复制内容中的CRLF换行 转为空格显示
+            if (InStr(NewClipboard, A_Space)=1) ; 第一个是空格 提取第二个 菜单名称限制字符串长度
+                NewClipboard:=SubStr(NewClipboard, 2, MenuLength)
+            else
+                NewClipboard:=SubStr(NewClipboard, 1, MenuLength) ; 菜单名称限制字符串长度
+            Menu ClipboardHistoryMenu, Add, %NewClipboard%, ClipTheHistoryRecord, Radio ; 添加菜单
+
+            if (A_Index<=TopMenuCount)
+                Menu ClipboardHistoryMenu, Check, %NewClipboard% ; 给顶置菜单打上点作为标识
+
+            if (A_Index=TopMenuCount)
+                Menu ClipboardHistoryMenu, Add ; 顶置菜单和非顶置菜单之间增加一条分割线
+        }
+    }
+    else
+        MaxItem:=MaxItemRecord
 Return
 
 重启软件:
@@ -323,8 +401,12 @@ Return
     {
         ; NewClipboard:=ClipboardHistory[ClipboardHistory.MaxIndex()+1-A_Index] ;逆序
         NewClipboard:=ClipboardHistory[A_Index] ;顺序
-        if (StrLen(NewClipboard)>30) ;菜单名称限制字符串长度
-            NewClipboard:=SubStr(NewClipboard, 1, 30)
+        NewClipboard:=RegExReplace(NewClipboard, "\s{2,}", " ") ; 去掉复制内容中的空格
+        NewClipboard:=StrReplace(NewClipboard, "`r`n", A_Space) ; 去掉复制内容中的CRLF换行 转为空格显示
+        if (InStr(NewClipboard, A_Space)=1) ; 第一个是空格 提取第二个 菜单名称限制字符串长度
+            NewClipboard:=SubStr(NewClipboard, 2, MenuLength)
+        else
+            NewClipboard:=SubStr(NewClipboard, 1, MenuLength) ; 菜单名称限制字符串长度
         Menu ClipboardHistoryMenu, Add, %NewClipboard%, ClipTheHistoryRecord, Radio ; 添加菜单
 
         if (A_Index<=TopMenuCount)
@@ -355,7 +437,7 @@ ClipTheHistoryRecord:
         {
             If (TopMenuCount>=1)
                 TopMenuCount := TopMenuCount-1
-            IniWrite %TopMenuCount%, History.ini, Setting, TopMenuCount
+            IniWrite %TopMenuCount%, History.ini, Settings, TopMenuCount
 
             ; 获取菜单内容
             TopClipboard := ClipboardHistory[A_ThisMenuItemPos]
@@ -368,7 +450,7 @@ ClipTheHistoryRecord:
         {
             if (TopMenuCount<ClipboardHistory.MaxIndex())
                 TopMenuCount := TopMenuCount+1
-            IniWrite %TopMenuCount%, History.ini, Setting, TopMenuCount
+            IniWrite %TopMenuCount%, History.ini, Settings, TopMenuCount
 
             ; 获取菜单内容
             TopClipboard := ClipboardHistory[A_ThisMenuItemPos-ExistTopMenu]
@@ -390,8 +472,12 @@ ClipTheHistoryRecord:
         {
             ; NewClipboard:=ClipboardHistory[ClipboardHistory.MaxIndex()+1-A_Index] ;逆序
             NewClipboard:=ClipboardHistory[A_Index] ;顺序
-            if (StrLen(NewClipboard)>30) ;菜单名称限制字符串长度
-                NewClipboard:=SubStr(NewClipboard, 1, 30)
+            NewClipboard:=RegExReplace(NewClipboard, "\s{2,}", " ") ; 去掉复制内容中的空格
+            NewClipboard:=StrReplace(NewClipboard, "`r`n", A_Space) ; 去掉复制内容中的CRLF换行 转为空格显示
+            if (InStr(NewClipboard, A_Space)=1) ; 第一个是空格 提取第二个 菜单名称限制字符串长度
+                NewClipboard:=SubStr(NewClipboard, 2, MenuLength)
+            else
+                NewClipboard:=SubStr(NewClipboard, 1, MenuLength) ; 菜单名称限制字符串长度
             Menu ClipboardHistoryMenu, Add, %NewClipboard%, ClipTheHistoryRecord, Radio ; 添加菜单
 
             if (A_Index<=TopMenuCount)
@@ -445,8 +531,12 @@ ClipTheHistoryRecord:
         {
             ; NewClipboard:=ClipboardHistory[ClipboardHistory.MaxIndex()+1-A_Index] ;逆序
             NewClipboard:=ClipboardHistory[A_Index] ;顺序
-            if (StrLen(NewClipboard)>30) ;菜单名称限制字符串长度
-                NewClipboard:=SubStr(NewClipboard, 1, 30)
+            NewClipboard:=RegExReplace(NewClipboard, "\s{2,}", " ") ; 去掉复制内容中的空格
+            NewClipboard:=StrReplace(NewClipboard, "`r`n", A_Space) ; 去掉复制内容中的CRLF换行 转为空格显示
+            if (InStr(NewClipboard, A_Space)=1) ; 第一个是空格 提取第二个 菜单名称限制字符串长度
+                NewClipboard:=SubStr(NewClipboard, 2, MenuLength)
+            else
+                NewClipboard:=SubStr(NewClipboard, 1, MenuLength) ; 菜单名称限制字符串长度
             Menu ClipboardHistoryMenu, Add, %NewClipboard%, ClipTheHistoryRecord, Radio ; 添加菜单
 
             if (A_Index<=TopMenuCount)
@@ -500,8 +590,12 @@ ClipTheHistoryRecord:
         {
             ; NewClipboard:=ClipboardHistory[ClipboardHistory.MaxIndex()+1-A_Index] ;逆序
             NewClipboard:=ClipboardHistory[A_Index] ;顺序
-            if (StrLen(NewClipboard)>30) ;菜单名称限制字符串长度
-                NewClipboard:=SubStr(NewClipboard, 1, 30)
+            NewClipboard:=RegExReplace(NewClipboard, "\s{2,}", " ") ; 去掉复制内容中的空格
+            NewClipboard:=StrReplace(NewClipboard, "`r`n", A_Space) ; 去掉复制内容中的CRLF换行 转为空格显示
+            if (InStr(NewClipboard, A_Space)=1) ; 第一个是空格 提取第二个 菜单名称限制字符串长度
+                NewClipboard:=SubStr(NewClipboard, 2, MenuLength)
+            else
+                NewClipboard:=SubStr(NewClipboard, 1, MenuLength) ; 菜单名称限制字符串长度
             Menu ClipboardHistoryMenu, Add, %NewClipboard%, ClipTheHistoryRecord, Radio ; 添加菜单
 
             if (A_Index<=TopMenuCount)
@@ -521,7 +615,7 @@ ClipTheHistoryRecord:
         {
             If (TopMenuCount>=1)
                 TopMenuCount := TopMenuCount-1
-            IniWrite %TopMenuCount%, History.ini, Setting, TopMenuCount
+            IniWrite %TopMenuCount%, History.ini, Settings, TopMenuCount
 
             ; 获取菜单内容
             TopClipboard := ClipboardHistory[A_ThisMenuItemPos]
@@ -552,8 +646,12 @@ ClipTheHistoryRecord:
         {
             ; NewClipboard:=ClipboardHistory[ClipboardHistory.MaxIndex()+1-A_Index] ;逆序
             NewClipboard:=ClipboardHistory[A_Index] ;顺序
-            if (StrLen(NewClipboard)>30) ;菜单名称限制字符串长度
-                NewClipboard:=SubStr(NewClipboard, 1, 30)
+            NewClipboard:=RegExReplace(NewClipboard, "\s{2,}", " ") ; 去掉复制内容中的空格
+            NewClipboard:=StrReplace(NewClipboard, "`r`n", A_Space) ; 去掉复制内容中的CRLF换行 转为空格显示
+            if (InStr(NewClipboard, A_Space)=1) ; 第一个是空格 提取第二个 菜单名称限制字符串长度
+                NewClipboard:=SubStr(NewClipboard, 2, MenuLength)
+            else
+                NewClipboard:=SubStr(NewClipboard, 1, MenuLength) ; 菜单名称限制字符串长度
             Menu ClipboardHistoryMenu, Add, %NewClipboard%, ClipTheHistoryRecord, Radio ; 添加菜单
 
             if (A_Index<=TopMenuCount)
@@ -601,7 +699,7 @@ return
 
     ; 清除顶置菜单配置
     TopMenuCount:=0
-    IniWrite %TopMenuCount%, History.ini, Setting, TopMenuCount
+    IniWrite %TopMenuCount%, History.ini, Settings, TopMenuCount
 
     Loop, 30
     {
