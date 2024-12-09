@@ -630,8 +630,8 @@ $+/::Send {Text}?
 ^d::
     ; 确保不是空内容
     BlockInput, On
-    Send, {Ctrl Up}
     Send ^c ; 复制选择的内容
+    Send, {Ctrl Up}
     ClipWait 1
     if (ErrorLevel || Clipboard = "")
         return
@@ -728,7 +728,7 @@ $+/::Send {Text}?
         }
         ; ToolTip 没有换行
     }
-    Else
+    Else ; 存在换行
     {
         CRLFcount := 0
         pos := 1
@@ -741,35 +741,53 @@ $+/::Send {Text}?
         }
         ; FirstCRLF:=InStr(ClipboardChoosed, "`r`n")
         ; ToolTip, CRLFcount%CRLFcount%`nFirstCRLF%FirstCRLF%
+        
         if (CRLFcount=1)
         {
             ; ToolTip % InStr(ClipboardChoosed, "`r`n")
             if (InStr(ClipboardChoosed, "`r`n")=1)
             {
                 Send, {End}
-                Sleep, 50
+                Sleep, 100
             }
             Send, {Shift Down}
             Send, {Alt Down}
-            Sleep, 50
+            Sleep, 100
             Send, {Down}
             Send, {Shift up}
             Send, {Alt up}
         }
         Else if (CRLFcount>1)
         {
+            Send, {Shift Down}
             FirstCRLF:=InStr(ClipboardChoosed, "`r`n")
             if (FirstCRLF=1)
             {
-                Send, +{Right}
-                Sleep, 50
+                Send, {Right}
+                Sleep, 100
             }
-            Send, {Shift Down}
             Send, {Alt Down}
-            Sleep, 50
+            Sleep, 100
             Send, {Down}
             Send, {Shift up}
             Send, {Alt up}
+
+            NewClipboard:=StrReplace(ClipboardChoosed, "`r`n") ; 去掉复制内容中的CRLF换行
+            NewClipboard:=StrReplace(NewClipboard, " ") ; 去掉复制内容中的空格
+            FirstBrace:=InStr(NewClipboard, "{")
+            EndBrace:=InStr(NewClipboard, "}", , 0)
+            ; NewClipboardMax:=StrLen(NewClipboard)
+            ; ToolTip, %NewClipboard%`nFirstBrace%FirstBrace% EndBrace%EndBrace% NewClipboardMax%NewClipboardMax%
+            
+            if (FirstBrace=1) and (EndBrace=StrLen(NewClipboard))
+            {
+                Sleep, 100
+                Send, {Up}
+                Send, {End}
+                Send, {Enter}
+                Send, {Text}else
+                Send, {Tab}
+            }
         }
     }
     Sleep, 100
@@ -782,6 +800,7 @@ Return
 $Enter::
     EnterDown:=A_TickCount
     BlockInput, On
+    Send, {Enter Up}
     loop
     {
         if !GetKeyState("Enter", "P")
@@ -795,8 +814,8 @@ $Enter::
             Sleep, 50
             Send, {End}
             Send, {Shift up}
-            KeyWait, Enter
             Send, {Enter}
+            KeyWait, Enter
             Break
         }
     }
