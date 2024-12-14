@@ -26,7 +26,7 @@ AHK正版官方论坛https://www.autohotkey.com/boards/viewforum.php?f=26
         }
     }
 
-    SendMode Event
+    SendMode Input
     Process Priority, , Realtime
     #MenuMaskKey vkE8
     #WinActivateForce
@@ -49,12 +49,19 @@ AHK正版官方论坛https://www.autohotkey.com/boards/viewforum.php?f=26
     Menu Tray, Add, 管理权限, 管理权限 ;添加新的右键菜单
     Menu Tray, Add, 开机自启, 开机自启 ;添加新的右键菜单
     Menu Tray, Add, 中键呼出, 中键呼出 ;添加新的右键菜单
-    Menu Tray, Add, 智能帮助, 智能帮助 ;添加新的右键菜单
     Menu Tray, Add, 记录数量, 记录数量 ;添加新的右键菜单
     Menu Tray, Add, 菜单宽度, 菜单宽度 ;添加新的右键菜单
+    Menu Tray, Add, 新增白名单, 新增白名单 ;添加新的右键菜单
+    Menu Tray, Add, 白名单设置, 白名单设置 ;添加新的右键菜单
+    Menu Tray, Add
+    Menu Tray, Add, 智能帮助, 智能帮助 ;添加新的右键菜单
+    Menu Tray, Add, Base64编解码, Base64编解码 ;添加新的右键菜单
     Menu Tray, Add
     Menu Tray, Add, 重启软件, 重启软件 ;添加新的右键菜单
     Menu Tray, Add, 退出软件, 退出软件 ;添加新的右键菜单
+
+    Menu B64Tray, Add, Encode编码, Encode ;添加新的右键菜单
+    Menu B64Tray, Add, Decode解码, Decode ;添加新的右键菜单
 
     autostartLnk:=A_StartupCommon . "\ClipboardHistoryRecorder.lnk" ;开机启动文件的路径
     IfExist, % autostartLnk ;检查开机启动的文件是否存在
@@ -79,7 +86,9 @@ AHK正版官方论坛https://www.autohotkey.com/boards/viewforum.php?f=26
 
         IniRead TopMenuCount, History.ini, Settings, TopMenuCount ;从ini文件读取
 
-        Hotkey $Mbutton, 中键
+        IniRead WhiteList, History.ini, Settings, 白名单列表 ;从ini文件读取
+
+        Hotkey Mbutton, 中键
         Iniread 中键呼出, History.ini, Settings, 中键呼出 ;从ini文件读取
         if (中键呼出=1)
         {
@@ -87,14 +96,24 @@ AHK正版官方论坛https://www.autohotkey.com/boards/viewforum.php?f=26
         }
         Else
         {
-            Hotkey $Mbutton, Off
+            Hotkey Mbutton, Off
+        }
+
+        Iniread Base64编解码, History.ini, Settings, Base64编解码 ;从ini文件读取
+        if (Base64编解码=1)
+        {
+            Menu Tray, Check, Base64编解码 ;右键菜单打勾
+        }
+        Else
+        {
+            Hotkey !x, Off
         }
 
         Iniread 智能帮助, History.ini, Settings, 智能帮助 ;从ini文件读取
         if (智能帮助=1)
             Menu Tray, Check, 智能帮助 ;右键菜单打勾
         Else
-            Hotkey $F1, Off
+            Hotkey F1, Off
 
         Iniread MaxItem, History.ini, Settings, 记录数量 ;从ini文件读取
         Iniread MenuLength, History.ini, Settings, 菜单宽度 ;从ini文件读取
@@ -119,26 +138,8 @@ AHK正版官方论坛https://www.autohotkey.com/boards/viewforum.php?f=26
         if (ClipboardAlreadyRecorded=1)
         {
             ; ToolTip, % ClipboardHistory.MaxIndex()
-            Loop % ClipboardHistory.MaxIndex()
-            {
-                ; NewClipboard:=ClipboardHistory[ClipboardHistory.MaxIndex()+1-A_Index] ;逆序
-                NewClipboard:=ClipboardHistory[A_Index] ;顺序
-                ; ToolTip, %A_Index%`nNewClipboard`n%NewClipboard%
-                ; Sleep, 100
-                NewClipboard:=RegExReplace(NewClipboard, "\s{2,}", " ") ; 去掉复制内容中的空格
-                NewClipboard:=StrReplace(NewClipboard, "`r`n", A_Space) ; 去掉复制内容中的CRLF换行 转为空格显示
-                if (InStr(NewClipboard, A_Space)=1) ; 第一个是空格 提取第二个 菜单名称限制字符串长度
-                    NewClipboard:=SubStr(NewClipboard, 2, MenuLength)
-                else
-                    NewClipboard:=SubStr(NewClipboard, 1, MenuLength) ; 菜单名称限制字符串长度
-                Menu ClipboardHistoryMenu, Add, %NewClipboard%, ClipTheHistoryRecord, Radio ; 添加菜单
-
-                if (A_Index<=TopMenuCount)
-                    Menu ClipboardHistoryMenu, Check, %NewClipboard% ; 给顶置菜单打上点作为标识
-
-                if (A_Index=TopMenuCount)
-                    Menu ClipboardHistoryMenu, Add ; 顶置菜单和非顶置菜单之间增加一条分割线
-            }
+            ; 重新加载菜单
+            RefreshMenu()
         }
     }
     Else
@@ -155,19 +156,58 @@ AHK正版官方论坛https://www.autohotkey.com/boards/viewforum.php?f=26
         智能帮助:=0
         IniWrite %智能帮助%, History.ini, Settings, 智能帮助 ;写入设置到ini文件
 
-        MaxItem:=30 ; 最大条目数量
+        MaxItem:=20 ; 最大条目数量
         IniWrite %MaxItem%, History.ini, Settings, 记录数量 ;写入设置到ini文件
 
-        MenuLength:=50 ; 最大菜单宽度
+        MenuLength:=30 ; 最大菜单宽度
         IniWrite %MenuLength%, History.ini, Settings, 菜单宽度 ;写入设置到ini文件
+
+        WhiteList:="Exe===Code.exe|Exe===Notepad--.exe"
+        IniWrite %WhiteList%, History.ini, Settings, 白名单列表
+
+        Base64编解码:=0
+        IniWrite %Base64编解码%, History.ini, Settings, Base64编解码 ;写入设置到ini文件
     }
 
     ; 软件初始运行时记录当前的剪贴板内容
     OldClipboardHistory := A_Clipboard
+
+    if (WhiteList="") or (WhiteList="ERROR")
+    {
+        MsgBox "您还未设置白名单, 请根据提示设置白名单"
+        goto 新增白名单
+    }
 Return
 
+RefreshMenu()
+{
+    global
+
+    Loop % ClipboardHistory.MaxIndex()
+    {
+        ; NewClipboard:=ClipboardHistory[ClipboardHistory.MaxIndex()+1-A_Index] ;逆序
+        NewClipboard:=SubStr(ClipboardHistory[A_Index], 1, MenuLength*2) ;顺序
+        NewClipboard:=StrReplace(NewClipboard, "`r`n",  " ▇ ") ; 去掉复制内容中的CRLF换行 转为空格显示
+        if (InStr(NewClipboard, " ▇ ")=1) ; 第一个是" ▇ " 提取第四个 菜单名称限制字符串长度
+            NewClipboard:=SubStr(NewClipboard, 4)
+        NewClipboard:=RegExReplace(NewClipboard, "\s{2,}", " ") ; 去掉复制内容中的空格
+        if (InStr(NewClipboard, A_Space)=1) ; 第一个是空格 提取第二个 菜单名称限制字符串长度
+            NewClipboard:=SubStr(NewClipboard, 2)
+        else
+            NewClipboard:=SubStr(NewClipboard, 1, MenuLength) ; 菜单名称限制字符串长度
+        Menu ClipboardHistoryMenu, Add, %NewClipboard%, ClipTheHistoryRecord, Radio ; 添加菜单
+
+        if (A_Index<=TopMenuCount)
+            Menu ClipboardHistoryMenu, Check, %NewClipboard% ; 给顶置菜单打上点作为标识
+
+        if (A_Index=TopMenuCount)
+            Menu ClipboardHistoryMenu, Add ; 顶置菜单和非顶置菜单之间增加一条分割线
+    }
+    Return
+}
+
 使用教程:
-    MsgBox, , 剪贴板历史记录使用教程, 剪贴板历史记录会保存在本地的History.ini内`n即使重启电脑也不会丢失剪贴板历史记录`n`n呼出剪贴板历史记录`n按下Alt+V打开剪贴板历史记录菜单`n你也可以在右键菜单中启用中键快捷呼出`n`n呼出后`n按住右键后再点击 可以顶置剪贴板历史记录`n按住侧键后再点击 可以上下调整剪贴板历史记录顺序`n按住Ctrl键后再点击 可以删除选中的剪贴板历史记录`n按下Ctrl + Shift + D 清除全部的剪贴板历史记录`n`nVS code专属功能`n按下Ctrl+D可以根据按下次数复制选中的内容`n你可以添加白名单让其他软件也可以使用`n`n按下F1可以自动打开AutoHotKey帮助并跳转到选中内容`n可指定编辑器内中文输入法下强制使用半角符号`n`n黑钨重工出品 免费开源`n更多免费软件请到QQ频道AutoHotKey12
+    MsgBox, , 剪贴板历史记录使用教程, 记录Ctrl+C Ctrl+X行为产生的剪贴板历史`n你可以修改源码更改为自定义的快捷键`n你可以不在白名单内的软件将不会被记录进剪贴板历史`n剪贴板历史记录会保存在本地的History.ini内`n即使重启电脑也不会丢失剪贴板历史记录`n`n呼出剪贴板历史记录`n按下Alt+V打开剪贴板历史记录菜单`n你也可以在右键菜单中启用中键快捷呼出`n`n呼出后`n按住右键后再点击 可以顶置剪贴板历史记录`n按住侧键后再点击 可以上下调整剪贴板历史记录顺序`n按住Ctrl键后再点击 可以删除选中的剪贴板历史记录`n按下Ctrl + Shift + D 清除全部的剪贴板历史记录`n`n编辑器专属功能`n按下Ctrl+D可以根据按下次数复制选中的内容`n自动根据前后文在两段括号中间键入and或者or`n如果开头是if则为下一段前增加else`n使用Alt+X可以Base64编解码选中的文字`n`n按下F1可以自动打开AutoHotKey帮助并跳转到选中内容`n可指定编辑器内中文输入法下强制使用半角符号`n`n黑钨重工出品 免费开源`n更多免费软件请到QQ频道AutoHotKey12
 return
 
 管理权限: ;模式切换
@@ -228,16 +268,33 @@ return
     if (中键呼出=1)
     {
         中键呼出:=0
-        Hotkey $Mbutton, Off
+        Hotkey Mbutton, Off
         IniWrite %中键呼出%, History.ini, Settings, 中键呼出 ;写入设置到ini文件
         Menu Tray, UnCheck, 中键呼出 ;右键菜单不打勾
     }
     Else
     {
         中键呼出:=1
-        Hotkey $Mbutton, On
+        Hotkey Mbutton, On
         IniWrite %中键呼出%, History.ini, Settings, 中键呼出 ;写入设置到ini文件
         Menu Tray, Check, 中键呼出 ;右键菜单打勾
+    }
+    Critical, Off
+return
+
+Base64编解码: ;模式切换
+    Critical, On
+    if (Base64编解码=1)
+    {
+        Base64编解码:=0
+        IniWrite %Base64编解码%, History.ini, Settings, Base64编解码 ;写入设置到ini文件
+        Menu Tray, UnCheck, Base64编解码 ;右键菜单不打勾
+    }
+    Else
+    {
+        Base64编解码:=1
+        IniWrite %Base64编解码%, History.ini, Settings, Base64编解码 ;写入设置到ini文件
+        Menu Tray, Check, Base64编解码 ;右键菜单打勾
     }
     Critical, Off
 return
@@ -247,7 +304,7 @@ return
     if (智能帮助=1)
     {
         智能帮助:=0
-        Hotkey $F1, Off
+        Hotkey F1, Off
         IniWrite %Adm智能帮助inMode%, History.ini, Settings, 智能帮助 ;写入设置到ini文件
         Menu Tray, UnCheck, 智能帮助 ;右键菜单不打勾
 
@@ -255,7 +312,7 @@ return
     Else
     {
         智能帮助:=1
-        Hotkey $F1, On
+        Hotkey F1, On
         IniWrite %智能帮助%, History.ini, Settings, 智能帮助 ;写入设置到ini文件
         Menu Tray, Check, 智能帮助 ;右键菜单打勾
     }
@@ -285,24 +342,7 @@ return
             Menu ClipboardHistoryMenu, DeleteAll
 
         ; 重新加载菜单
-        Loop % ClipboardHistory.MaxIndex()
-        {
-            ; NewClipboard:=ClipboardHistory[ClipboardHistory.MaxIndex()+1-A_Index] ;逆序
-            NewClipboard:=ClipboardHistory[A_Index] ;顺序
-            NewClipboard:=RegExReplace(NewClipboard, "\s{2,}", " ") ; 去掉复制内容中的空格
-            NewClipboard:=StrReplace(NewClipboard, "`r`n", A_Space) ; 去掉复制内容中的CRLF换行 转为空格显示
-            if (InStr(NewClipboard, A_Space)=1) ; 第一个是空格 提取第二个 菜单名称限制字符串长度
-                NewClipboard:=SubStr(NewClipboard, 2, MenuLength)
-            else
-                NewClipboard:=SubStr(NewClipboard, 1, MenuLength) ; 菜单名称限制字符串长度
-            Menu ClipboardHistoryMenu, Add, %NewClipboard%, ClipTheHistoryRecord, Radio ; 添加菜单
-
-            if (A_Index<=TopMenuCount)
-                Menu ClipboardHistoryMenu, Check, %NewClipboard% ; 给顶置菜单打上点作为标识
-
-            if (A_Index=TopMenuCount)
-                Menu ClipboardHistoryMenu, Add ; 顶置菜单和非顶置菜单之间增加一条分割线
-        }
+        RefreshMenu()
     }
     else
         MaxItem:=MaxItemRecord
@@ -322,27 +362,110 @@ Return
             Menu ClipboardHistoryMenu, DeleteAll
 
         ; 重新加载菜单
-        Loop % ClipboardHistory.MaxIndex()
-        {
-            ; NewClipboard:=ClipboardHistory[ClipboardHistory.MaxIndex()+1-A_Index] ;逆序
-            NewClipboard:=ClipboardHistory[A_Index] ;顺序
-            NewClipboard:=RegExReplace(NewClipboard, "\s{2,}", " ") ; 去掉复制内容中的空格
-            NewClipboard:=StrReplace(NewClipboard, "`r`n", A_Space) ; 去掉复制内容中的CRLF换行 转为空格显示
-            if (InStr(NewClipboard, A_Space)=1) ; 第一个是空格 提取第二个 菜单名称限制字符串长度
-                NewClipboard:=SubStr(NewClipboard, 2, MenuLength)
-            else
-                NewClipboard:=SubStr(NewClipboard, 1, MenuLength) ; 菜单名称限制字符串长度
-            Menu ClipboardHistoryMenu, Add, %NewClipboard%, ClipTheHistoryRecord, Radio ; 添加菜单
-
-            if (A_Index<=TopMenuCount)
-                Menu ClipboardHistoryMenu, Check, %NewClipboard% ; 给顶置菜单打上点作为标识
-
-            if (A_Index=TopMenuCount)
-                Menu ClipboardHistoryMenu, Add ; 顶置菜单和非顶置菜单之间增加一条分割线
-        }
+        RefreshMenu()
     }
     else
         MaxItem:=MaxItemRecord
+Return
+
+新增白名单:
+    KeyWait LButton
+    WhiteListType:=1
+    loop
+    {
+        KeyWait Ctrl
+        MouseGetPos, , , WinID
+        WinGetTitle WinTitle, Ahk_id %WinID%
+        WinGet WinExe, ProcessName, Ahk_id %WinID%
+        WinGetClass WinClass, Ahk_id %WinID%
+        if (WhiteListType=1)
+            ToolTip 当前窗口Title: %WinTitle%`n点击左键添加到白名单 点击Ctrl键切换类型
+        Else if (WhiteListType=2)
+            ToolTip 当前窗口Class: %WinClass%`n点击左键添加到白名单 点击Ctrl键切换类型
+        Else if (WhiteListType=3)
+            ToolTip 当前窗口Exe: %WinExe%`n点击左键添加到白名单 点击Ctrl键切换类型
+
+        if GetKeyState("Ctrl", "P")
+        {
+            WhiteListType:=WhiteListType+1
+            if (WhiteListType>3)
+                WhiteListType:=1
+        }
+        else if GetKeyState("Lbutton", "P")
+        {
+            if (WhiteListType=1)
+            {
+                WhiteList.="|Title==="
+                WhiteList.=WinTitle
+            }
+            else if (WhiteListType=2)
+            {
+                WhiteList.="|Class==="
+                WhiteList.=WinClass
+            }
+            else if (WhiteListType=2)
+            {
+                WhiteList.="|Exe==="
+                WhiteList.=WinExe
+            }
+            ToolTip
+            goto 白名单设置
+        }
+
+    }
+Return
+
+白名单设置:
+    InputBox WhiteList, 白名单设置, 请用 “===” 分隔开 匹配类型 和 匹配特征`n匹配类型有 Title Class Exe`n请用 “|” 分隔开每个窗口`n举例: Title===窗口标题, , A_ScreenHeight, 180, , , Locale, ,%WhiteList%
+    if !ErrorLevel
+    {
+        IniWrite %WhiteList%, History.ini, Settings, 白名单列表 ;写入设置到ini文件
+    }
+    else
+    {
+        IniRead WhiteList, History.ini, Settings, 白名单列表 ;写入设置到ini文件
+    }
+Return
+
+白名单:
+    白名单:=0
+    MouseGetPos, , , 白名单识别排除ID
+    白名单列表:=StrSplit(WhiteList,"|")
+    匹配次数:=白名单列表.Length()
+    Loop %匹配次数% ;Title Class Exe
+    {
+        ; ToolTip % 白名单列表[A_Index]
+        if (InStr(白名单列表[A_Index], "Title")!=0)
+        {
+            排除项位置:=InStr(白名单列表[A_Index], "===")+3
+            排除项:=SubStr(白名单列表[A_Index], 排除项位置)
+            WinGetTitle 当前特征, ahk_id %白名单识别排除ID%
+            ; ToolTip, 排除项%排除项%`n当前特征%当前特征%
+            if (当前特征=排除项)
+                白名单:=1
+        }
+        else if (InStr(白名单列表[A_Index], "Class")!=0)
+        {
+            排除项位置:=InStr(白名单列表[A_Index], "===")+3
+            排除项:=SubStr(白名单列表[A_Index], 排除项位置)
+            WinGetClass 当前特征, ahk_id %白名单识别排除ID%
+            ; ToolTip, 排除项%排除项%`n当前特征%当前特征%
+            if (当前特征=排除项)
+                白名单:=1
+        }
+        else if (InStr(白名单列表[A_Index], "Exe")!=0)
+        {
+            排除项位置:=InStr(白名单列表[A_Index], "===")+3
+            排除项:=SubStr(白名单列表[A_Index], 排除项位置)
+            WinGet 当前特征, ProcessName, ahk_id %白名单识别排除ID%
+            ; ToolTip, 排除项%排除项%`n当前特征%当前特征%
+            if (当前特征=排除项)
+                白名单:=1
+        }
+    }
+
+    if (白名单=1)
+        Critical, Off
 Return
 
 重启软件:
@@ -355,9 +478,14 @@ Return
 
 ; 为什么不用OnClipboardChange:文本操作都是用剪贴板实现的 我们只记录快捷键产生的剪贴板内容
 
-; 监听 Ctrl+C 或 Ctrl+X 事件以保存剪贴板内容
-~^c::
-~^x::
+; 监听 Ctrl+C 或 Ctrl+X 事件以保存剪贴板内容 在最前面加~不会劫持按键
+~$^c::
+~$^x::
+    ; 不在白名单内不添加到剪贴板内
+    GoSub, 白名单
+    if (白名单=0)
+        Return
+
     ; 确保不是空内容
     ClipWait 1
     if (ErrorLevel || Clipboard = "")
@@ -396,31 +524,15 @@ Return
     if (ClipboardAlreadyRecorded=1)
         Menu ClipboardHistoryMenu, DeleteAll
 
-    ; 添加历史记录数组为新条目到剪贴板历史GUI
-    Loop % ClipboardHistory.MaxIndex()
-    {
-        ; NewClipboard:=ClipboardHistory[ClipboardHistory.MaxIndex()+1-A_Index] ;逆序
-        NewClipboard:=ClipboardHistory[A_Index] ;顺序
-        NewClipboard:=RegExReplace(NewClipboard, "\s{2,}", " ") ; 去掉复制内容中的空格
-        NewClipboard:=StrReplace(NewClipboard, "`r`n", A_Space) ; 去掉复制内容中的CRLF换行 转为空格显示
-        if (InStr(NewClipboard, A_Space)=1) ; 第一个是空格 提取第二个 菜单名称限制字符串长度
-            NewClipboard:=SubStr(NewClipboard, 2, MenuLength)
-        else
-            NewClipboard:=SubStr(NewClipboard, 1, MenuLength) ; 菜单名称限制字符串长度
-        Menu ClipboardHistoryMenu, Add, %NewClipboard%, ClipTheHistoryRecord, Radio ; 添加菜单
-
-        if (A_Index<=TopMenuCount)
-            Menu ClipboardHistoryMenu, Check, %NewClipboard% ; 给顶置菜单打上点作为标识
-
-        if (A_Index=TopMenuCount)
-            Menu ClipboardHistoryMenu, Add ; 顶置菜单和非顶置菜单之间增加一条分割线
-    }
+    ; 重新加载菜单
+    RefreshMenu()
     ClipboardAlreadyRecorded:=1
 return
 
 ; 显示剪贴板历史供用户选择
 中键:
 !v:: ; 使用 Alt+V 键作为触发显示剪贴板历史的快捷键
+
     ; 记录菜单显示位置
     MouseGetPos MouseInScreenX, MouseInScreenY
     ; ToolTip, MouseInScreenX%MouseInScreenX%`nMouseInScreenY%MouseInScreenY%
@@ -468,24 +580,7 @@ ClipTheHistoryRecord:
         Menu ClipboardHistoryMenu, DeleteAll
 
         ; 重新加载菜单
-        Loop % ClipboardHistory.MaxIndex()
-        {
-            ; NewClipboard:=ClipboardHistory[ClipboardHistory.MaxIndex()+1-A_Index] ;逆序
-            NewClipboard:=ClipboardHistory[A_Index] ;顺序
-            NewClipboard:=RegExReplace(NewClipboard, "\s{2,}", " ") ; 去掉复制内容中的空格
-            NewClipboard:=StrReplace(NewClipboard, "`r`n", A_Space) ; 去掉复制内容中的CRLF换行 转为空格显示
-            if (InStr(NewClipboard, A_Space)=1) ; 第一个是空格 提取第二个 菜单名称限制字符串长度
-                NewClipboard:=SubStr(NewClipboard, 2, MenuLength)
-            else
-                NewClipboard:=SubStr(NewClipboard, 1, MenuLength) ; 菜单名称限制字符串长度
-            Menu ClipboardHistoryMenu, Add, %NewClipboard%, ClipTheHistoryRecord, Radio ; 添加菜单
-
-            if (A_Index<=TopMenuCount)
-                Menu ClipboardHistoryMenu, Check, %NewClipboard% ; 给顶置菜单打上点作为标识
-
-            if (A_Index=TopMenuCount)
-                Menu ClipboardHistoryMenu, Add ; 顶置菜单和非顶置菜单之间增加一条分割线
-        }
+        RefreshMenu()
 
         ; 在上次显示菜单位置显示
         Menu ClipboardHistoryMenu, Show, %MouseInScreenX%, %MouseInScreenY%
@@ -527,24 +622,7 @@ ClipTheHistoryRecord:
         Menu ClipboardHistoryMenu, DeleteAll
 
         ; 重新加载菜单
-        Loop % ClipboardHistory.MaxIndex()
-        {
-            ; NewClipboard:=ClipboardHistory[ClipboardHistory.MaxIndex()+1-A_Index] ;逆序
-            NewClipboard:=ClipboardHistory[A_Index] ;顺序
-            NewClipboard:=RegExReplace(NewClipboard, "\s{2,}", " ") ; 去掉复制内容中的空格
-            NewClipboard:=StrReplace(NewClipboard, "`r`n", A_Space) ; 去掉复制内容中的CRLF换行 转为空格显示
-            if (InStr(NewClipboard, A_Space)=1) ; 第一个是空格 提取第二个 菜单名称限制字符串长度
-                NewClipboard:=SubStr(NewClipboard, 2, MenuLength)
-            else
-                NewClipboard:=SubStr(NewClipboard, 1, MenuLength) ; 菜单名称限制字符串长度
-            Menu ClipboardHistoryMenu, Add, %NewClipboard%, ClipTheHistoryRecord, Radio ; 添加菜单
-
-            if (A_Index<=TopMenuCount)
-                Menu ClipboardHistoryMenu, Check, %NewClipboard% ; 给顶置菜单打上点作为标识
-
-            if (A_Index=TopMenuCount)
-                Menu ClipboardHistoryMenu, Add ; 顶置菜单和非顶置菜单之间增加一条分割线
-        }
+        RefreshMenu()
 
         ; 在上次显示菜单位置显示
         Menu ClipboardHistoryMenu, Show, %MouseInScreenX%, %MouseInScreenY%
@@ -586,24 +664,7 @@ ClipTheHistoryRecord:
         Menu ClipboardHistoryMenu, DeleteAll
 
         ; 重新加载菜单
-        Loop % ClipboardHistory.MaxIndex()
-        {
-            ; NewClipboard:=ClipboardHistory[ClipboardHistory.MaxIndex()+1-A_Index] ;逆序
-            NewClipboard:=ClipboardHistory[A_Index] ;顺序
-            NewClipboard:=RegExReplace(NewClipboard, "\s{2,}", " ") ; 去掉复制内容中的空格
-            NewClipboard:=StrReplace(NewClipboard, "`r`n", A_Space) ; 去掉复制内容中的CRLF换行 转为空格显示
-            if (InStr(NewClipboard, A_Space)=1) ; 第一个是空格 提取第二个 菜单名称限制字符串长度
-                NewClipboard:=SubStr(NewClipboard, 2, MenuLength)
-            else
-                NewClipboard:=SubStr(NewClipboard, 1, MenuLength) ; 菜单名称限制字符串长度
-            Menu ClipboardHistoryMenu, Add, %NewClipboard%, ClipTheHistoryRecord, Radio ; 添加菜单
-
-            if (A_Index<=TopMenuCount)
-                Menu ClipboardHistoryMenu, Check, %NewClipboard% ; 给顶置菜单打上点作为标识
-
-            if (A_Index=TopMenuCount)
-                Menu ClipboardHistoryMenu, Add ; 顶置菜单和非顶置菜单之间增加一条分割线
-        }
+        RefreshMenu()
 
         ; 在上次显示菜单位置显示
         Menu ClipboardHistoryMenu, Show, %MouseInScreenX%, %MouseInScreenY%
@@ -642,24 +703,7 @@ ClipTheHistoryRecord:
         Menu ClipboardHistoryMenu, DeleteAll
 
         ; 重新加载菜单
-        Loop % ClipboardHistory.MaxIndex()
-        {
-            ; NewClipboard:=ClipboardHistory[ClipboardHistory.MaxIndex()+1-A_Index] ;逆序
-            NewClipboard:=ClipboardHistory[A_Index] ;顺序
-            NewClipboard:=RegExReplace(NewClipboard, "\s{2,}", " ") ; 去掉复制内容中的空格
-            NewClipboard:=StrReplace(NewClipboard, "`r`n", A_Space) ; 去掉复制内容中的CRLF换行 转为空格显示
-            if (InStr(NewClipboard, A_Space)=1) ; 第一个是空格 提取第二个 菜单名称限制字符串长度
-                NewClipboard:=SubStr(NewClipboard, 2, MenuLength)
-            else
-                NewClipboard:=SubStr(NewClipboard, 1, MenuLength) ; 菜单名称限制字符串长度
-            Menu ClipboardHistoryMenu, Add, %NewClipboard%, ClipTheHistoryRecord, Radio ; 添加菜单
-
-            if (A_Index<=TopMenuCount)
-                Menu ClipboardHistoryMenu, Check, %NewClipboard% ; 给顶置菜单打上点作为标识
-
-            if (A_Index=TopMenuCount)
-                Menu ClipboardHistoryMenu, Add ; 顶置菜单和非顶置菜单之间增加一条分割线
-        }
+        RefreshMenu()
 
         ; 在上次显示菜单位置显示
         Menu ClipboardHistoryMenu, Show, %MouseInScreenX%, %MouseInScreenY%
@@ -709,32 +753,8 @@ return
     ToolTip
 return
 
-; 如果你需要添加白名单请复制下面这行代码填入对应的进程名
-#IfWinActive ahk_exe Code.exe ; 以下代码只在指定软件内运行
-
-; 强制半角
-$`::Send {Text}``
-$[::Send {Text}[
-$]::Send {Text}]
-$;::Send {Text};
-$'::Send {Text}'
-$\::Send {Text}\
-$,::Send {Text},
-$.::Send {Text}.
-$/::Send {Text}/
-$+1::Send {Text}!
-$+4::Send {Text}$
-$+6::Send {Text}^
-$+9::Send {Text}(
-$+0::Send {Text})
-$+-::Send {Text}_
-$+[::Send {Text}{
-$+]::Send {Text}}
-$+;::Send {Text}:
-$+'::Send {Text}"
-$+,::Send {Text}<
-$+.::Send {Text}>
-$+/::Send {Text}?
+; 如果你需要添加白名单请复制并填入对应的进程名
+#If WinActive("ahk_exe Code.exe") or WinActive("ahk_exe Notepad--.exe") ; 以下代码只在指定软件内运行
 
 ^d::
     ; 确保不是空内容
@@ -799,14 +819,14 @@ $+/::Send {Text}?
 
             loop %CopyTimes%
             {
-                if (InStr(A_Clipboard, ") or (")!=0) or (InStr(A_Clipboard, ")or(")!=0) or (InStr(A_Clipboard, ")or (")!=0) or (InStr(A_Clipboard, ") or(")!=0)
-                    NewClipboard .= " or "
-                Else if (InStr(A_Clipboard, ") || (")!=0) or (InStr(A_Clipboard, ")||(")!=0) or (InStr(A_Clipboard, ") ||(")!=0) or (InStr(A_Clipboard, ")|| (")!=0)
+                if (InStr(A_Clipboard, ") || (")!=0) or (InStr(A_Clipboard, ")||(")!=0) or (InStr(A_Clipboard, ") ||(")!=0) or (InStr(A_Clipboard, ")|| (")!=0)
                     NewClipboard .= " || "
-                Else if (InStr(A_Clipboard, ") and (")!=0) or (InStr(A_Clipboard, ")and(")!=0) or (InStr(A_Clipboard, ")and (")!=0) or (InStr(A_Clipboard, ") and(")!=0)
-                    NewClipboard .= " and "
+                Else if (InStr(A_Clipboard, ") or (")!=0) or (InStr(A_Clipboard, ")or(")!=0) or (InStr(A_Clipboard, ")or (")!=0) or (InStr(A_Clipboard, ") or(")!=0)
+                    NewClipboard .= " or "
                 Else if (InStr(A_Clipboard, ") && (")!=0) or (InStr(A_Clipboard, ")&&(")!=0) or (InStr(A_Clipboard, ")&& (")!=0) or (InStr(A_Clipboard, ") &&(")!=0)
                     NewClipboard .= " && "
+                Else ;if (InStr(A_Clipboard, ") and (")!=0) or (InStr(A_Clipboard, ")and(")!=0) or (InStr(A_Clipboard, ")and (")!=0) or (InStr(A_Clipboard, ") and(")!=0)
+                    NewClipboard .= " and "
 
                 NewClipboard .= ClipboardChoosed
             }
@@ -882,7 +902,7 @@ $+/::Send {Text}?
             Send {Alt up}
 
             NewClipboard:=StrReplace(ClipboardChoosed, "`r`n") ; 去掉复制内容中的CRLF换行
-            NewClipboard:=StrReplace(NewClipboard, " ") ; 去掉复制内容中的空格
+            NewClipboard:=RegExReplace(ClipboardChoosed, "\s", "") ; 去掉复制内容中的空格
             FirstBrace:=InStr(NewClipboard, "{")
             EndBrace:=InStr(NewClipboard, "}", , 0)
             ; NewClipboardMax:=StrLen(NewClipboard)
@@ -897,6 +917,16 @@ $+/::Send {Text}?
                 Send {Text}else
                 Send {Tab}
             }
+
+            IfCodeSection:=InStr(NewClipboard, "if")
+            if (IfCodeSection=1)
+            {
+                Sleep 100
+                Send {End}
+                Send {Home}
+                Send {Text}else
+                Send {space}
+            }
         }
     }
     Sleep 100
@@ -907,13 +937,14 @@ $+/::Send {Text}?
 Return
 
 $Enter::
-    EnterDown:=A_TickCount
-    BlockInput On
     Send {Enter Up}
+    BlockInput On
+    EnterDown:=A_TickCount
     loop
     {
         if !GetKeyState("Enter", "P")
         {
+            KeyWait Enter
             Send {Enter}
             Break
         }
@@ -933,7 +964,7 @@ Return
 
 ; 打开中文帮助并跳转至对应文档
 ; 功能修改自 智能F1 https://github.com/telppa/SciTE4AutoHotkey-Plus/tree/master
-$F1::
+F1::
     BlockInput On
     Send ^c
     BlockInput Off
@@ -1018,3 +1049,95 @@ Acc_ObjectFromWindow(hWnd, idObject = -4)
     If  DllCall("oleacc\AccessibleObjectFromWindow", "Ptr", hWnd, "UInt", idObject&=0xFFFFFFFF, "Ptr", -VarSetCapacity(IID,16)+NumPut(idObject==0xFFFFFFF0?0x46000000000000C0:0x719B3800AA000C81,NumPut(idObject==0xFFFFFFF0?0x0000000000020400:0x11CF3C3D618736E0,IID,"Int64"),"Int64"), "Ptr*", pacc)=0
         Return  ComObjEnwrap(9,pacc,1)
 }
+
+b64Encode(string)
+{
+    VarSetCapacity(bin, StrPut(string, "UTF-8")) && len := StrPut(string, &bin, "UTF-8") - 1 
+    if !(DllCall("crypt32\CryptBinaryToString", "ptr", &bin, "uint", len, "uint", 0x1, "ptr", 0, "uint*", size))
+        throw Exception("CryptBinaryToString failed", -1)
+    VarSetCapacity(buf, size << 1, 0)
+    if !(DllCall("crypt32\CryptBinaryToString", "ptr", &bin, "uint", len, "uint", 0x1, "ptr", &buf, "uint*", size))
+        throw Exception("CryptBinaryToString failed", -1)
+    return StrGet(&buf)
+}
+
+b64Decode(string)
+{
+    if !(DllCall("crypt32\CryptStringToBinary", "ptr", &string, "uint", 0, "uint", 0x1, "ptr", 0, "uint*", size, "ptr", 0, "ptr", 0))
+        throw Exception("CryptStringToBinary failed", -1)
+    VarSetCapacity(buf, size, 0)
+    if !(DllCall("crypt32\CryptStringToBinary", "ptr", &string, "uint", 0, "uint", 0x1, "ptr", &buf, "uint*", size, "ptr", 0, "ptr", 0))
+        throw Exception("CryptStringToBinary failed", -1)
+    return StrGet(&buf, size, "UTF-8")
+}
+
+!x::
+    if (Base64编解码!=1)
+        Return
+
+    BlockInput On
+    Send ^c ; 复制选择的内容
+    Send {Ctrl Up}
+    ClipWait 1
+    if (ErrorLevel || Clipboard = "")
+        return
+
+    ; 等待新内容复制进来
+    ClipboardGetTickCount:=A_TickCount
+    Loop
+    {
+        if (A_Clipboard!=OldClipboardHistory) ; ClipboardChoosed
+            Break
+        Else if (A_TickCount-ClipboardGetTickCount>100) ; 超时
+            Break
+
+        Sleep 10
+    }
+
+    B64Text:=A_Clipboard
+    BlockInput Off
+    Menu B64Tray, Show
+Return
+
+Encode:
+    B64Text:=b64Encode(B64Text)
+    B64Text:=StrReplace(B64Text, "`r`n")
+    Clipboard:=B64Text
+    Send ^v
+    Sleep 100
+    Clipboard:=OldClipboardHistory
+Return
+
+Decode:
+    B64Text:=b64Decode(B64Text)
+    B64Text:=StrReplace(B64Text, "`r`n")
+    Clipboard:=B64Text
+    Send ^v
+    Sleep 100
+    Clipboard:=OldClipboardHistory
+Return
+
+
+; 强制半角
+$`::Send {Text}``
+$[::Send {Text}[
+$]::Send {Text}]
+$;::Send {Text};
+$'::Send {Text}'
+$\::Send {Text}\
+$,::Send {Text},
+$.::Send {Text}.
+$/::Send {Text}/
+$+1::Send {Text}!
+$+4::Send {Text}$
+$+6::Send {Text}^
+$+9::Send {Text}(
+$+0::Send {Text})
+$+-::Send {Text}_
+$+[::Send {Text}{
+$+]::Send {Text}}
+$+;::Send {Text}:
+$+'::Send {Text}"
+$+,::Send {Text}<
+$+.::Send {Text}>
+$+/::Send {Text}?
