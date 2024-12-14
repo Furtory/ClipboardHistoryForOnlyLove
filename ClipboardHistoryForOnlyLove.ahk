@@ -174,6 +174,7 @@ AHK正版官方论坛https://www.autohotkey.com/boards/viewforum.php?f=26
 
     if (WhiteList="") or (WhiteList="ERROR")
     {
+        WhiteList:="Exe===Code.exe|Exe===Notepad--.exe"
         MsgBox "您还未设置白名单, 请根据提示设置白名单"
         goto 新增白名单
     }
@@ -193,8 +194,7 @@ RefreshMenu()
         NewClipboard:=RegExReplace(NewClipboard, "\s{2,}", " ") ; 去掉复制内容中的空格
         if (InStr(NewClipboard, A_Space)=1) ; 第一个是空格 提取第二个 菜单名称限制字符串长度
             NewClipboard:=SubStr(NewClipboard, 2)
-        else
-            NewClipboard:=SubStr(NewClipboard, 1, MenuLength) ; 菜单名称限制字符串长度
+        NewClipboard:=SubStr(NewClipboard, 1, MenuLength) ; 菜单名称限制字符串长度
         Menu ClipboardHistoryMenu, Add, %NewClipboard%, ClipTheHistoryRecord, Radio ; 添加菜单
 
         if (A_Index<=TopMenuCount)
@@ -391,27 +391,63 @@ Return
             if (WhiteListType>3)
                 WhiteListType:=1
         }
+        else if GetKeyState("Esc", "P")
+        {
+            ToolTip
+            Break
+        }
         else if GetKeyState("Lbutton", "P")
         {
             if (WhiteListType=1)
             {
-                WhiteList.="|Title==="
-                WhiteList.=WinTitle
+                NewWhiteList:="Title==="
+                NewWhiteList.=WinTitle
             }
             else if (WhiteListType=2)
             {
-                WhiteList.="|Class==="
-                WhiteList.=WinClass
+                NewWhiteList:="Class==="
+                NewWhiteList.=WinClass
             }
-            else if (WhiteListType=2)
+            else if (WhiteListType=3)
             {
-                WhiteList.="|Exe==="
-                WhiteList.=WinExe
+                NewWhiteList:="Exe==="
+                NewWhiteList.=WinExe
             }
             ToolTip
-            goto 白名单设置
-        }
+            Sleep 100
 
+            IniRead WhiteListRecord, History.ini, Settings, 白名单列表 ;从ini文件读取
+            if (InStr(WhiteListRecord, NewWhiteList)=0) ; 新增白名单
+            {
+                if (WhiteList="") or (WhiteList="ERROR")
+                {
+                    WhiteList:="Exe===Code.exe|Exe===Notepad--.exe"
+                }
+                WhiteList.="|"
+                WhiteList.=NewWhiteList
+                Sleep 100
+                KeyWait LButton
+                goto 白名单设置
+            }
+            else
+            {
+                LbuttonUp:=0
+                loop 50
+                {
+                    ToolTip 白名单中已存在相同内容`,请重新设置!
+                    if !GetKeyState("Lbutton", "P")
+                        LbuttonUp:=1
+
+                    if GetKeyState("Lbutton", "P") and (LbuttonUp=1)
+                    {
+                        ToolTip
+                        KeyWait LButton
+                        Break
+                    }
+                    Sleep 30
+                }
+            }
+        }
     }
 Return
 
@@ -431,7 +467,7 @@ Return
     白名单:=0
     MouseGetPos, , , 白名单识别排除ID
     白名单列表:=StrSplit(WhiteList,"|")
-    匹配次数:=白名单列表.Length()
+    匹配次数:=白名单列表.Length() 
     Loop %匹配次数% ;Title Class Exe
     {
         ; ToolTip % 白名单列表[A_Index]
