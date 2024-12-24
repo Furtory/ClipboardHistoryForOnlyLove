@@ -5,6 +5,23 @@
 AHK正版官方论坛https://www.autohotkey.com/boards/viewforum.php?f=26
 国内唯一完全免费开源AHK论坛请到QQ频道AutoHotKey12
 本人所有教程和脚本严禁转载到此收费论坛以防被用于收费盈利 https://www.autoahk.com/
+
+如果你要进行二次开发 以下变量可能帮到你
+ClipboardHistory ; 剪贴板历史记录
+ClipboardHistoryRecord ; 修改/删除前的剪贴板历史记录 撤回后会被重置为空数组 只可撤回1次
+
+TopClipboard ; 最近一次被顶置剪贴板的内容
+TopMenuCount ; 当前的顶置菜单数量
+TopMenuCountRecord ; 修改前的顶置菜单数量记录 撤回后会被重置为空 只可撤回1次
+OldTopClipboardPos ; 最近一次被顶置剪贴板的内容之前在数组中的位置
+NewTopClipboardPos ; 最近一次被顶置剪贴板的内容现在在数组中的位置
+
+MoveClipboard ; 最近一次被移动剪贴板的内容
+OldMoveClipboardPos ; 最近一次被移动剪贴板的内容之前在数组中的位置
+NewMoveClipboardPos ; 最近一次被移动剪贴板的内容现在在数组中的位置
+
+DeleteClipboard ; 最近一次被删除剪贴板的内容
+DeleteClipboardPos ; 最近一次被删除剪贴板的内容现在在数组中的位置
 */
 
 管理员模式:
@@ -57,6 +74,9 @@ AHK正版官方论坛https://www.autohotkey.com/boards/viewforum.php?f=26
     Menu Tray, Add, 智能帮助, 智能帮助 ;添加新的右键菜单
     Menu Tray, Add, Base64编解码, Base64编解码 ;添加新的右键菜单
     Menu Tray, Add
+    ; Menu Tray, Add, 回收站, 回收站 ;添加新的右键菜单
+    Menu Tray, Add, 撤回操作, 撤回操作 ;添加新的右键菜单
+    Menu Tray, Add
     Menu Tray, Add, 重启软件, 重启软件 ;添加新的右键菜单
     Menu Tray, Add, 退出软件, 退出软件 ;添加新的右键菜单
 
@@ -77,6 +97,7 @@ AHK正版官方论坛https://www.autohotkey.com/boards/viewforum.php?f=26
 
     ; 定义全局变量用于存储剪贴板历史
     ClipboardHistory := []
+    ClipboardHistoryRecord:=[]
 
     IfExist, %A_ScriptDir%\History.ini
     {
@@ -187,9 +208,9 @@ RefreshMenu()
     Loop % ClipboardHistory.MaxIndex()
     {
         ; NewClipboard:=ClipboardHistory[ClipboardHistory.MaxIndex()+1-A_Index] ;逆序
-        NewClipboard:=SubStr(ClipboardHistory[A_Index], 1, MenuLength*2) ;顺序
-        NewClipboard:=StrReplace(NewClipboard, "`r`n",  " ▇ ") ; 去掉复制内容中的CRLF换行 转为空格显示
-        if (InStr(NewClipboard, " ▇ ")=1) ; 第一个是" ▇ " 提取第四个 菜单名称限制字符串长度
+        NewClipboard:=SubStr(ClipboardHistory[A_Index], 1, MenuLength*3) ;顺序
+        NewClipboard:=StrReplace(NewClipboard, "`r`n",  " ┇ ") ; 去掉复制内容中的CRLF换行 转为空格显示
+        if (InStr(NewClipboard, " ┇ ")=1) ; 第一个是" ┇ " 提取第四个 菜单名称限制字符串长度
             NewClipboard:=SubStr(NewClipboard, 4)
         NewClipboard:=RegExReplace(NewClipboard, "\s{2,}", " ") ; 去掉复制内容中的空格
         if (InStr(NewClipboard, A_Space)=1) ; 第一个是空格 提取第二个 菜单名称限制字符串长度
@@ -207,7 +228,7 @@ RefreshMenu()
 }
 
 使用教程:
-    MsgBox, , 剪贴板历史记录使用教程, 记录Ctrl+C Ctrl+X行为产生的剪贴板历史`n你可以修改源码更改为自定义的快捷键`n你可以不在白名单内的软件将不会被记录进剪贴板历史`n剪贴板历史记录会保存在本地的History.ini内`n即使重启电脑也不会丢失剪贴板历史记录`n`n呼出剪贴板历史记录`n按下Alt+V打开剪贴板历史记录菜单`n你也可以在右键菜单中启用中键快捷呼出`n`n呼出后`n按住右键后再点击 可以顶置剪贴板历史记录`n按住侧键后再点击 可以上下调整剪贴板历史记录顺序`n按住Ctrl键后再点击 可以删除选中的剪贴板历史记录`n按下Ctrl + Shift + D 清除全部的剪贴板历史记录`n`n编辑器专属功能`n按下Ctrl+D可以根据按下次数复制选中的内容`n自动根据前后文在两段括号中间键入and或者or`n如果开头是if则为下一段前增加else`n使用Alt+X可以Base64编解码选中的文字`n`n按下F1可以自动打开AutoHotKey帮助并跳转到选中内容`n可指定编辑器内中文输入法下强制使用半角符号`n`n黑钨重工出品 免费开源`n更多免费软件请到QQ频道AutoHotKey12
+    MsgBox, , 剪贴板历史记录使用教程, 记录白名单软件内Ctrl+C Ctrl+X行为产生的剪贴板历史`n你可以修改源码更改为自定义的快捷键和白名单`n如果复制了相同的内容不会添加重复的条目`n而生将重复的条目挪到最前`n剪贴板历史记录会保存在本地的History.ini内`n即使重启电脑也不会丢失剪贴板历史记录`n超出长度或删除的剪贴板历史记录会存在HistoryRecycleBin.ini内`n`n呼出剪贴板历史记录`n按下Alt+V打开剪贴板历史记录菜单`n你也可以在右键菜单中启用中键快捷呼出`n`n呼出后`n按住右键后再点击 可以顶置剪贴板历史记录`n按住侧键后再点击 可以上下调整剪贴板历史记录顺序`n按住Ctrl键后再点击 可以删除选中的剪贴板历史记录`n按下Ctrl + Shift + D 清除全部的剪贴板历史记录`n`n编辑器专属功能`n按下Ctrl+D可以根据按下次数复制选中的内容`n自动根据前后文在两段括号中间键入and或者or`n如果开头是if则为下一段前增加else`n使用Alt+X可以Base64编解码选中的文字`n`n按下F1可以自动打开AutoHotKey帮助并跳转到选中内容`n可指定编辑器内中文输入法下强制使用半角符号`n`n黑钨重工出品 免费开源`n更多免费软件请到QQ频道AutoHotKey12
 return
 
 管理权限: ;模式切换
@@ -499,9 +520,47 @@ Return
                 白名单:=1
         }
     }
+Return
 
-    if (白名单=1)
-        Critical, Off
+撤回操作:
+    if (ClipboardHistoryRecord!="") and (ClipboardHistoryRecord.Length()!=0)
+    {
+        ; 恢复上一次的顶置菜单数量
+        TopMenuCount := TopMenuCountRecord
+        TopMenuCountRecord:=""
+        IniWrite %TopMenuCount%, History.ini, Settings, TopMenuCount ;写入设置到ini文件
+
+        ; 恢复上一次的剪贴板历史记录
+        ClipboardHistory:=[]
+        for index, value in ClipboardHistoryRecord
+        {
+            ClipboardHistory.Push(value)
+        }
+        TopMenuCountRecord:=[]
+
+        ; 剪贴板记录保存到本地ini配置文件内 注意应当把换行CR-LF给替换为不换行文本储存 需要逆序
+        Loop, % ClipboardHistory.MaxIndex()
+            IniWrite % StrReplace(ClipboardHistory[ClipboardHistory.MaxIndex()+1-A_Index], "`r`n", "``r``n"), History.ini, History, ClipboardHistory%A_Index%
+
+        ; 如果有记录则先清空旧条目再生成新条目
+        if (ClipboardAlreadyRecorded=1)
+            Menu ClipboardHistoryMenu, DeleteAll
+
+        ; 重新加载菜单
+        RefreshMenu()
+        ClipboardAlreadyRecorded:=1
+
+        loop 50
+        {
+            ToolTip 已撤回至上次操作
+            Sleep 30
+        }
+        ToolTip
+    }
+Return
+
+回收站:
+    Run %A_ScriptDir%\HistoryRecycleBin.ini
 Return
 
 重启软件:
@@ -540,17 +599,61 @@ Return
     }
     OldClipboardHistory := A_Clipboard ; 此处需要更新记录用于下次对比
 
-    ; 检查是否已经存在相同的条目，避免重复添加
-    for index, entry in ClipboardHistory
-        if (entry = Clipboard)
-            return
+    ; 检查是否已经存在相同的条目, 将重复的条目移到最上面
+    if (ClipboardHistory!="") and (ClipboardHistory.Length()!=0)
+    {
+        for index, entry in ClipboardHistory
+        {
+            if (entry = Clipboard)
+            {
+                ; 修改前记录上次的的剪贴板历史
+                ClipboardHistoryRecord:=[]
+                for index, value in ClipboardHistory
+                {
+                    ClipboardHistoryRecord.Push(value)
+                }
+                TopMenuCountRecord:=TopMenuCount
 
-        ; 限制历史记录大小为MaxItem个条目
-        if (ClipboardHistory.MaxIndex() = MaxItem)
-            ClipboardHistory.RemoveAt(MaxItem)
+                ; ToolTip A_Index%A_Index%
+                If (A_Index<=TopMenuCount) ; 是顶置菜单
+                {
+                    ; 获取菜单内容和序号
+                    MoveClipboard := ClipboardHistory[A_Index]
+                    ; 删除
+                    ClipboardHistory.RemoveAt(A_Index)
+                    ; 添加到顶部
+                    ClipboardHistory.InsertAt(1, MoveClipboard)
+                }
+                Else ;不是顶置菜单
+                {
+                    ; 获取菜单内容和序号
+                    MoveClipboard := ClipboardHistory[A_Index]
+                    ; 删除
+                    ClipboardHistory.RemoveAt(A_Index)
+                    ; 添加到顶部
+                    ClipboardHistory.InsertAt(TopMenuCount+1, MoveClipboard)
+                }
 
-        ; 添加新的剪贴板条目到历史记录数组
-        ClipboardHistory.InsertAt(TopMenuCount+1, Clipboard)
+                ; 剪贴板记录保存到本地ini配置文件内 注意应当把换行CR-LF给替换为不换行文本储存 需要逆序
+                Loop, % ClipboardHistory.MaxIndex()
+                    IniWrite % StrReplace(ClipboardHistory[ClipboardHistory.MaxIndex()+1-A_Index], "`r`n", "``r``n"), History.ini, History, ClipboardHistory%A_Index%
+
+                ; 删除GUI菜单
+                Menu ClipboardHistoryMenu, DeleteAll
+
+                ; 重新加载菜单
+                RefreshMenu()
+                Return
+            }
+        }
+    }
+
+    ; 限制历史记录大小为MaxItem个条目
+    if (ClipboardHistory.MaxIndex() = MaxItem)
+        ClipboardHistory.RemoveAt(MaxItem)
+
+    ; 添加新的剪贴板条目到历史记录数组
+    ClipboardHistory.InsertAt(TopMenuCount+1, Clipboard)
 
     ; 剪贴板记录保存到本地ini配置文件内 注意应当把换行CR-LF给替换为不换行文本储存 需要逆序
     Loop, % ClipboardHistory.MaxIndex()
@@ -581,14 +684,24 @@ ClipTheHistoryRecord:
     ExistTopMenu := (TopMenuCount > 0) ? true : false
     If GetKeyState("Rbutton", "P") ; 右键 顶置所选菜单
     {
+        ; 修改前记录上次的的剪贴板历史
+        ClipboardHistoryRecord:=[]
+        for index, value in ClipboardHistory
+        {
+            ClipboardHistoryRecord.Push(value)
+        }
+        TopMenuCountRecord:=TopMenuCount
+
         If (A_ThisMenuItemPos<=TopMenuCount) ; 点击的是右键 顶置所选菜单
         {
             If (TopMenuCount>=1)
                 TopMenuCount := TopMenuCount-1
             IniWrite %TopMenuCount%, History.ini, Settings, TopMenuCount
 
-            ; 获取菜单内容
+            ; 获取菜单内容和序号
             TopClipboard := ClipboardHistory[A_ThisMenuItemPos]
+            OldTopClipboardPos := A_ThisMenuItemPos
+            NewTopClipboardPos := TopMenuCount+1
             ; 删除
             ClipboardHistory.RemoveAt(A_ThisMenuItemPos)
             ; 添加到顶部
@@ -600,8 +713,10 @@ ClipTheHistoryRecord:
                 TopMenuCount := TopMenuCount+1
             IniWrite %TopMenuCount%, History.ini, Settings, TopMenuCount
 
-            ; 获取菜单内容
+            ; 获取菜单内容和序号
             TopClipboard := ClipboardHistory[A_ThisMenuItemPos-ExistTopMenu]
+            OldTopClipboardPos := A_ThisMenuItemPos-ExistTopMenu
+            NewTopClipboardPos := 1
             ; 删除
             ClipboardHistory.RemoveAt(A_ThisMenuItemPos-ExistTopMenu)
             ; 添加到顶部
@@ -624,23 +739,35 @@ ClipTheHistoryRecord:
     }
     Else If GetKeyState("Xbutton2", "P") ; 侧键上 向上移动所选菜单
     {
+        ; 修改前记录上次的的剪贴板历史
+        ClipboardHistoryRecord:=[]
+        for index, value in ClipboardHistory
+        {
+            ClipboardHistoryRecord.Push(value)
+        }
+        TopMenuCountRecord:=TopMenuCount
+
         If (A_ThisMenuItemPos<=TopMenuCount) and (A_ThisMenuItemPos>1) ; 点击的是是顶置菜单 向上移动所选菜单
         {
-            ; 获取菜单内容
-            TopClipboard := ClipboardHistory[A_ThisMenuItemPos]
+            ; 获取菜单内容和序号
+            MoveClipboard := ClipboardHistory[A_ThisMenuItemPos]
+            OldMoveClipboardPos := A_ThisMenuItemPos
+            NewMoveClipboardPos := A_ThisMenuItemPos-1
             ; 删除
             ClipboardHistory.RemoveAt(A_ThisMenuItemPos)
             ; 添加到上一Pos
-            ClipboardHistory.InsertAt(A_ThisMenuItemPos-1, TopClipboard)
+            ClipboardHistory.InsertAt(A_ThisMenuItemPos-1, MoveClipboard)
         }
         Else If (A_ThisMenuItemPos-ExistTopMenu>TopMenuCount+1) ;不是顶置菜单 向上移动所选菜单
         {
-            ; 获取菜单内容
-            TopClipboard := ClipboardHistory[A_ThisMenuItemPos-ExistTopMenu]
+            ; 获取菜单内容和序号
+            MoveClipboard := ClipboardHistory[A_ThisMenuItemPos-ExistTopMenu]
+            OldMoveClipboardPos := A_ThisMenuItemPos-ExistTopMenu
+            NewMoveClipboardPos := A_ThisMenuItemPos-1-ExistTopMenu
             ; 删除
             ClipboardHistory.RemoveAt(A_ThisMenuItemPos-ExistTopMenu)
             ; 添加到上一Pos
-            ClipboardHistory.InsertAt(A_ThisMenuItemPos-1-ExistTopMenu, TopClipboard)
+            ClipboardHistory.InsertAt(A_ThisMenuItemPos-1-ExistTopMenu, MoveClipboard)
         }
         Else
         {
@@ -666,23 +793,35 @@ ClipTheHistoryRecord:
     }
     Else If GetKeyState("Xbutton1", "P") ; 侧键下 向下移动所选菜单
     {
+        ; 修改前记录上次的的剪贴板历史
+        ClipboardHistoryRecord:=[]
+        for index, value in ClipboardHistory
+        {
+            ClipboardHistoryRecord.Push(value)
+        }
+        TopMenuCountRecord:=TopMenuCount
+
         If (A_ThisMenuItemPos<TopMenuCount) and (A_ThisMenuItemPos<TopMenuCount) ; 点击的是是顶置菜单 向下移动所选菜单
         {
-            ; 获取菜单内容
-            TopClipboard := ClipboardHistory[A_ThisMenuItemPos]
+            ; 获取菜单内容和序号
+            MoveClipboard := ClipboardHistory[A_ThisMenuItemPos]
+            OldMoveClipboardPos := A_ThisMenuItemPos
+            NewMoveClipboardPos := A_ThisMenuItemPos+1
             ; 删除
             ClipboardHistory.RemoveAt(A_ThisMenuItemPos)
             ; 添加到上一Pos
-            ClipboardHistory.InsertAt(A_ThisMenuItemPos+1, TopClipboard)
+            ClipboardHistory.InsertAt(A_ThisMenuItemPos+1, MoveClipboard)
         }
         Else If (A_ThisMenuItemPos-ExistTopMenu>TopMenuCount) and (A_ThisMenuItemPos-ExistTopMenu<ClipboardHistory.MaxIndex()) ;不是顶置菜单 向下移动所选菜单
         {
-            ; 获取菜单内容
-            TopClipboard := ClipboardHistory[A_ThisMenuItemPos-ExistTopMenu]
+            ; 获取菜单内容和序号
+            MoveClipboard := ClipboardHistory[A_ThisMenuItemPos-ExistTopMenu]
+            OldMoveClipboardPos := A_ThisMenuItemPos-ExistTopMenu
+            NewMoveClipboardPos := A_ThisMenuItemPos+1-ExistTopMenu
             ; 删除
             ClipboardHistory.RemoveAt(A_ThisMenuItemPos-ExistTopMenu)
             ; 添加到上一Pos
-            ClipboardHistory.InsertAt(A_ThisMenuItemPos+1-ExistTopMenu, TopClipboard)
+            ClipboardHistory.InsertAt(A_ThisMenuItemPos+1-ExistTopMenu, MoveClipboard)
         }
         Else
         {
@@ -708,21 +847,32 @@ ClipTheHistoryRecord:
     }
     Else If GetKeyState("Ctrl", "P") ; Ctrl 删除所选菜单
     {
+        ; 删除前记录上次的的剪贴板历史
+        ClipboardHistoryRecord:=[]
+        for index, value in ClipboardHistory
+        {
+            ClipboardHistoryRecord.Push(value)
+        }
+        TopMenuCountRecord:=TopMenuCount
+
         If (A_ThisMenuItemPos<=TopMenuCount) ; 点击的是是顶置菜单
         {
             If (TopMenuCount>=1)
                 TopMenuCount := TopMenuCount-1
             IniWrite %TopMenuCount%, History.ini, Settings, TopMenuCount
 
-            ; 获取菜单内容
-            TopClipboard := ClipboardHistory[A_ThisMenuItemPos]
+            ; 获取菜单内容和序号
+            DeleteClipboard := ClipboardHistory[A_ThisMenuItemPos]
+            DeleteClipboardPos:=A_ThisMenuItemPos
+            TopMenuCountRecord:=TopMenuCount
             ; 删除
             ClipboardHistory.RemoveAt(A_ThisMenuItemPos)
         }
         Else ;不是顶置菜单 删除所选菜单
         {
-            ; 获取菜单内容
-            TopClipboard := ClipboardHistory[A_ThisMenuItemPos-ExistTopMenu]
+            ; 获取菜单内容和序号
+            DeleteClipboard := ClipboardHistory[A_ThisMenuItemPos-ExistTopMenu]
+            DeleteClipboardPos:=A_ThisMenuItemPos-ExistTopMenu
             ; 删除
             ClipboardHistory.RemoveAt(A_ThisMenuItemPos-ExistTopMenu)
         }
@@ -763,8 +913,16 @@ return
 
 ; 清除剪贴板历史
 ^+d:: ; Ctrl + Shift + D 用于清除历史记录
+    ; 删除前记录上次的的剪贴板历史
+    ClipboardHistoryRecord:=[]
+    for index, value in ClipboardHistory
+    {
+        ClipboardHistoryRecord.Push(value)
+    }
+    TopMenuCountRecord:=TopMenuCount
+
     ; 清除数组
-    ClipboardHistory := []
+    ClipboardHistory:=[]
 
     ; 清除GUI菜单
     if (ClipboardAlreadyRecorded=1)
@@ -808,7 +966,10 @@ return
         if (A_Clipboard!=OldClipboardHistory) ; ClipboardChoosed
             Break
         Else if (A_TickCount-ClipboardGetTickCount>100) ; 超时
-            Break
+        {
+            BlockInput off
+            return
+        }
 
         Sleep 10
     }
@@ -817,20 +978,43 @@ return
     ; ToolTip, %A_Clipboard%
     if (InStr(ClipboardChoosed, "`r`n")<=0) ;没有换行
     {
-        if (InStr(ClipboardChoosed, "(")=1) and (StrLen(ClipboardChoosed)>1) and (InStr(ClipboardChoosed, ")", , 0)=StrLen(ClipboardChoosed))
+        if (InStr(ClipboardChoosed, "(")=1) and (StrLen(ClipboardChoosed)>1) and (InStr(ClipboardChoosed, ")", , 0)=StrLen(ClipboardChoosed)) ; 前面有括号 不止一个字符 最后一个是括号
         {
             send {End 2}
             send {Shift Down}
             send {Home 2}
             send {Shift Up}
             Send ^c ; 复制选择的内容
-            NewClipboardStar := SubStr(A_Clipboard, 1, InStr(A_Clipboard, ClipboardChoosed)+StrLen(ClipboardChoosed)-1)
-            NewClipboardEnd := SubStr(A_Clipboard, InStr(A_Clipboard, ClipboardChoosed)+StrLen(ClipboardChoosed))
-            NewClipboard := NewClipboardStar
+
+            ClipWait 1
+            if (ErrorLevel || A_Clipboard = "")
+            {
+                BlockInput off
+                return
+            }
+
+            ; 等待新内容复制进来
+            ClipboardGetTickCount:=A_TickCount
+            Loop
+            {
+                if (A_Clipboard!=ClipboardChoosed) ; ClipboardChoosed
+                    Break
+                Else if (A_TickCount-ClipboardGetTickCount>100) ; 超时
+                {
+                    BlockInput off
+                    return
+                }
+
+                Sleep 10
+            }
+
+            NewClipboardStart := SubStr(A_Clipboard, 1, InStr(A_Clipboard, ClipboardChoosed)+StrLen(ClipboardChoosed)-1) ; 提取选择内容及选择内容之前的字符串
+            NewClipboardEnd := SubStr(A_Clipboard, InStr(A_Clipboard, ClipboardChoosed)+StrLen(ClipboardChoosed)) ; 提取选择内容之后的字符串
+            NewClipboard := NewClipboardStart ; 新的剪贴板导入之前的字符串
 
             CopyTimes:=1
             CopyCount:=A_TickCount
-            loop
+            loop ; 记录复制次数
             {
                 ToolTip CopyTimes%CopyTimes%
                 if GetKeyState("D", "P")
@@ -853,7 +1037,7 @@ return
                 sleep 30
             }
 
-            loop %CopyTimes%
+            loop %CopyTimes% ; 根据复制次数，将选择内容导入新剪贴板
             {
                 if (InStr(A_Clipboard, ") || (")!=0) or (InStr(A_Clipboard, ")||(")!=0) or (InStr(A_Clipboard, ") ||(")!=0) or (InStr(A_Clipboard, ")|| (")!=0)
                     NewClipboard .= " || "
@@ -867,9 +1051,9 @@ return
                 NewClipboard .= ClipboardChoosed
             }
 
-            NewClipboard .= NewClipboardEnd
+            NewClipboard .= NewClipboardEnd ; 新的剪贴板导入之后的字符串
             BlockInput off
-            Clipboard := NewClipboard
+            Clipboard := NewClipboard ; 剪贴板写入新的剪贴板
 
             ; If (Start) or (Test123) or (End)
             ; If (Start) and (Test456) and (End)
@@ -877,6 +1061,7 @@ return
 
             Sleep 100
             Send ^v ; ClipboardChoosed
+            ; ToolTip Start%NewClipboardStart%`nEnd%NewClipboardEnd%
 
             loop 30
             {
@@ -1125,7 +1310,10 @@ b64Decode(string)
         if (A_Clipboard!=OldClipboardHistory) ; ClipboardChoosed
             Break
         Else if (A_TickCount-ClipboardGetTickCount>100) ; 超时
-            Break
+        {
+            BlockInput off
+            return
+        }
 
         Sleep 10
     }
