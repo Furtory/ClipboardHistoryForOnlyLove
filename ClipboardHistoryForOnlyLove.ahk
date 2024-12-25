@@ -20,6 +20,7 @@ MoveClipboard ; 最近一次被移动剪贴板的内容
 OldMoveClipboardPos ; 最近一次被移动剪贴板的内容之前在数组中的位置
 NewMoveClipboardPos ; 最近一次被移动剪贴板的内容现在在数组中的位置
 
+ExceedClipboard ; 最近一次超出条目上限被移除的剪贴板的内容
 DeleteClipboard ; 最近一次被删除剪贴板的内容
 DeleteClipboardPos ; 最近一次被删除剪贴板的内容现在在数组中的位置
 */
@@ -74,7 +75,8 @@ DeleteClipboardPos ; 最近一次被删除剪贴板的内容现在在数组中�
     Menu Tray, Add, 智能帮助, 智能帮助 ;添加新的右键菜单
     Menu Tray, Add, Base64编解码, Base64编解码 ;添加新的右键菜单
     Menu Tray, Add
-    ; Menu Tray, Add, 回收站, 回收站 ;添加新的右键菜单
+    Menu Tray, Add, 查看回收站, 回收站 ;添加新的右键菜单
+    Menu Tray, Add, 清空回收站, 清空回收站 ;添加新的右键菜单
     Menu Tray, Add, 撤回操作, 撤回操作 ;添加新的右键菜单
     Menu Tray, Add
     Menu Tray, Add, 重启软件, 重启软件 ;添加新的右键菜单
@@ -216,7 +218,7 @@ RefreshMenu()
         if (InStr(NewClipboard, A_Space)=1) ; 第一个是空格 提取第二个 菜单名称限制字符串长度
             NewClipboard:=SubStr(NewClipboard, 2)
         NewClipboard:=SubStr(NewClipboard, 1, MenuLength) ; 菜单名称限制字符串长度
-        Menu ClipboardHistoryMenu, Add, %NewClipboard%, ClipTheHistoryRecord, Radio ; 添加菜单
+        Menu ClipboardHistoryMenu, Add, %NewClipboard%, ClickTheHistoryRecord, Radio ; 添加菜单
 
         if (A_Index<=TopMenuCount)
             Menu ClipboardHistoryMenu, Check, %NewClipboard% ; 给顶置菜单打上点作为标识
@@ -228,7 +230,7 @@ RefreshMenu()
 }
 
 使用教程:
-    MsgBox, , 剪贴板历史记录使用教程, 记录白名单软件内Ctrl+C Ctrl+X行为产生的剪贴板历史`n你可以修改源码更改为自定义的快捷键和白名单`n如果复制了相同的内容不会添加重复的条目`n而生将重复的条目挪到最前`n剪贴板历史记录会保存在本地的History.ini内`n即使重启电脑也不会丢失剪贴板历史记录`n超出长度或删除的剪贴板历史记录会存在HistoryRecycleBin.ini内`n`n呼出剪贴板历史记录`n按下Alt+V打开剪贴板历史记录菜单`n你也可以在右键菜单中启用中键快捷呼出`n`n呼出后`n按住右键后再点击 可以顶置剪贴板历史记录`n按住侧键后再点击 可以上下调整剪贴板历史记录顺序`n按住Ctrl键后再点击 可以删除选中的剪贴板历史记录`n按下Ctrl + Shift + D 清除全部的剪贴板历史记录`n`n编辑器专属功能`n按下Ctrl+D可以根据按下次数复制选中的内容`n自动根据前后文在两段括号中间键入and或者or`n如果开头是if则为下一段前增加else`n使用Alt+X可以Base64编解码选中的文字`n`n按下F1可以自动打开AutoHotKey帮助并跳转到选中内容`n可指定编辑器内中文输入法下强制使用半角符号`n`n黑钨重工出品 免费开源`n更多免费软件请到QQ频道AutoHotKey12
+    MsgBox, , 剪贴板历史记录使用教程, 记录白名单软件内Ctrl+C Ctrl+X行为产生的剪贴板历史`n你可以修改源码更改为自定义的快捷键和白名单`n如果复制了相同的内容不会添加重复的条目`n而生将重复的条目挪到最前`n剪贴板历史记录会保存在本地的History.ini内`n即使重启电脑也不会丢失剪贴板历史记录`n超出长度或删除的剪贴板历史记录会存在HistoryRecycleBin.txt内`n`n呼出剪贴板历史记录`n按下Alt+V打开剪贴板历史记录菜单`n你也可以在右键菜单中启用中键快捷呼出`n`n呼出后`n按住右键后再点击 可以顶置剪贴板历史记录`n按住侧键后再点击 可以上下调整剪贴板历史记录顺序`n按住Ctrl键后再点击 可以删除选中的剪贴板历史记录`n按下Ctrl + Shift + D 清除全部的剪贴板历史记录`n`n编辑器专属功能`n按下Ctrl+D可以根据按下次数复制选中的内容`n自动根据前后文在两段括号中间键入and或者or`n如果开头是if则为下一段前增加else`n使用Alt+X可以Base64编解码选中的文字`n`n按下F1可以自动打开AutoHotKey帮助并跳转到选中内容`n可指定编辑器内中文输入法下强制使用半角符号`n`n黑钨重工出品 免费开源`n更多免费软件请到QQ频道AutoHotKey12
 return
 
 管理权限: ;模式切换
@@ -560,8 +562,41 @@ Return
 Return
 
 回收站:
-    Run %A_ScriptDir%\HistoryRecycleBin.ini
+    if (FileExist(A_ScriptDir . "\HistoryRecycleBin.txt"))
+        Run %A_ScriptDir%\HistoryRecycleBin.txt
 Return
+
+清空回收站:
+    if (FileExist(A_ScriptDir . "\HistoryRecycleBin.txt"))
+    {
+        FileDelete %A_ScriptDir%\HistoryRecycleBin.txt
+
+        ; 创建空白的回收站记录
+        FileAppend, , %A_ScriptDir%\HistoryRecycleBin.txt
+    }
+Return
+
+写入回收站:
+    InputRecycleBin(InputString)
+Return
+
+InputRecycleBin(InputStr)
+{
+    if (FileExist(A_ScriptDir . "\HistoryRecycleBin.txt"))
+    {
+        FileRead StringRecord, %A_ScriptDir%\HistoryRecycleBin.txt ; 读取以前的回收站记录
+        Trim(StringRecord, " `t`n`r") ; 去掉前后空格和换行符
+
+        FileDelete %A_ScriptDir%\HistoryRecycleBin.txt ; 删除以前的回收站记录
+
+        NewString:= "时间: " . A_YYYY . "年" . A_MM . "月" . A_DD . "日 " . A_Hour . ":" . A_Min . ":" . A_Sec . "`n" . InputStr . "`n`n" . StringRecord  ; 存入新记录前先记录时间
+
+        FileAppend %NewString%, %A_ScriptDir%\HistoryRecycleBin.txt ; 添加新的回收站记录
+        Return 1
+    }
+    else
+        Return 0
+}
 
 重启软件:
 Reload
@@ -617,7 +652,7 @@ Return
                 ; ToolTip A_Index%A_Index%
                 If (A_Index<=TopMenuCount) ; 是顶置菜单
                 {
-                    ; 获取菜单内容和序号
+                    ; 获取菜单内容和序号x
                     MoveClipboard := ClipboardHistory[A_Index]
                     ; 删除
                     ClipboardHistory.RemoveAt(A_Index)
@@ -650,7 +685,13 @@ Return
 
     ; 限制历史记录大小为MaxItem个条目
     if (ClipboardHistory.MaxIndex() = MaxItem)
-        ClipboardHistory.RemoveAt(MaxItem)
+    {
+        ExceedClipboard:=ClipboardHistory[ClipboardHistory.MaxIndex()]
+        ; ToolTip, %ExceedClipboard%
+        InputRecycleBin(ExceedClipboard) ; 删除的内容存入回收站
+
+        ClipboardHistory.RemoveAt(MaxItem) ; 删除最后一个条目
+    }
 
     ; 添加新的剪贴板条目到历史记录数组
     ClipboardHistory.InsertAt(TopMenuCount+1, Clipboard)
@@ -680,7 +721,7 @@ return
 return
 
 ; 当用户从菜单选择一项时黏贴剪贴板内容
-ClipTheHistoryRecord:
+ClickTheHistoryRecord:
     ExistTopMenu := (TopMenuCount > 0) ? true : false
     If GetKeyState("Rbutton", "P") ; 右键 顶置所选菜单
     {
@@ -872,10 +913,15 @@ ClipTheHistoryRecord:
         {
             ; 获取菜单内容和序号
             DeleteClipboard := ClipboardHistory[A_ThisMenuItemPos-ExistTopMenu]
-            DeleteClipboardPos:=A_ThisMenuItemPos-ExistTopMenu
+            DeleteClipboardPos := A_ThisMenuItemPos-ExistTopMenu
             ; 删除
             ClipboardHistory.RemoveAt(A_ThisMenuItemPos-ExistTopMenu)
         }
+
+        ; ToolTip %DeleteClipboard%
+        ; 删除的内容存入回收站 因为菜单显示的时候线程是被阻塞的 所以这里用定时器
+        InputString := DeleteClipboard
+        SetTimer 写入回收站, -1
 
         ; 清除ini文件
         Loop %MaxItem%
