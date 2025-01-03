@@ -66,18 +66,19 @@ DeleteClipboardPos ; 最近一次被删除剪贴板的内容现在在数组中�
     Menu Tray, Add
     Menu Tray, Add, 管理权限, 管理权限 ;添加新的右键菜单
     Menu Tray, Add, 开机自启, 开机自启 ;添加新的右键菜单
-    Menu Tray, Add, 中键呼出, 中键呼出 ;添加新的右键菜单
     Menu Tray, Add, 记录数量, 记录数量 ;添加新的右键菜单
     Menu Tray, Add, 菜单宽度, 菜单宽度 ;添加新的右键菜单
+    Menu Tray, Add
     Menu Tray, Add, 新增白名单, 新增白名单 ;添加新的右键菜单
     Menu Tray, Add, 白名单设置, 白名单设置 ;添加新的右键菜单
     Menu Tray, Add
+    Menu Tray, Add, 中键呼出, 中键呼出 ;添加新的右键菜单
     Menu Tray, Add, 智能帮助, 智能帮助 ;添加新的右键菜单
     Menu Tray, Add, Base64编解码, Base64编解码 ;添加新的右键菜单
     Menu Tray, Add
+    Menu Tray, Add, 撤回操作, 撤回操作 ;添加新的右键菜单
     Menu Tray, Add, 查看回收站, 回收站 ;添加新的右键菜单
     Menu Tray, Add, 清空回收站, 清空回收站 ;添加新的右键菜单
-    Menu Tray, Add, 撤回操作, 撤回操作 ;添加新的右键菜单
     Menu Tray, Add
     Menu Tray, Add, 重启软件, 重启软件 ;添加新的右键菜单
     Menu Tray, Add, 退出软件, 退出软件 ;添加新的右键菜单
@@ -564,15 +565,31 @@ Return
 回收站:
     if (FileExist(A_ScriptDir . "\HistoryRecycleBin.txt"))
         Run %A_ScriptDir%\HistoryRecycleBin.txt
+    else
+    {
+        FileAppend, , %A_ScriptDir%\HistoryRecycleBin.txt
+        Sleep 500
+        Run %A_ScriptDir%\HistoryRecycleBin.txt
+    }
 Return
 
 清空回收站:
-    if (FileExist(A_ScriptDir . "\HistoryRecycleBin.txt"))
+    MsgBox 4, 清空回收站,  是否清空回收站吗?`n此操作不可逆! ;询问是否清空回收站
+    ifMsgBox Yes
     {
-        FileDelete %A_ScriptDir%\HistoryRecycleBin.txt
-
+        if (FileExist(A_ScriptDir . "\HistoryRecycleBin.txt"))
+        {
+            FileDelete %A_ScriptDir%\HistoryRecycleBin.txt
+        }
         ; 创建空白的回收站记录
         FileAppend, , %A_ScriptDir%\HistoryRecycleBin.txt
+
+        loop 50
+        {
+            ToolTip 回收站已清空
+            Sleep 30
+        }
+        ToolTip
     }
 Return
 
@@ -611,17 +628,16 @@ Return
 ; 监听 Ctrl+C 或 Ctrl+X 事件以保存剪贴板内容 在最前面加~不会劫持按键
 ~$^c::
 ~$^x::
+    if (OldClipboardHistory="")
+        OldClipboardHistory := A_Clipboard
+
     ; 不在白名单内不添加到剪贴板内
     GoSub, 白名单
     if (白名单=0)
         Return
 
-    ; 确保不是空内容
-    ClipWait 1
-    if (ErrorLevel || Clipboard = "")
-        return
-
     ; 等待新内容复制进来
+    ClipWait 1
     ClipboardGetTickCount:=A_TickCount
     Loop
     {
@@ -632,7 +648,12 @@ Return
 
         Sleep 30
     }
-    OldClipboardHistory := A_Clipboard ; 此处需要更新记录用于下次对比
+
+    ; 确保不是空内容
+    if (RegExMatch(A_Clipboard, "^\s*$"))
+        return
+    else
+        OldClipboardHistory := A_Clipboard ; 此处需要更新记录用于下次对比
 
     ; 检查是否已经存在相同的条目, 将重复的条目移到最上面
     if (ClipboardHistory!="") and (ClipboardHistory.Length()!=0)
@@ -969,6 +990,9 @@ return
 
     ; 清除数组
     ClipboardHistory:=[]
+
+    ; 清除剪贴板历史
+    OldClipboardHistory:=""
 
     ; 清除GUI菜单
     if (ClipboardAlreadyRecorded=1)
