@@ -1019,17 +1019,13 @@ return
 
 ; 如果你需要添加白名单请复制并填入对应的进程名
 #If WinActive("ahk_exe Code.exe") or WinActive("ahk_exe Notepad--.exe") ; 以下代码只在指定软件内运行
-
-^d::
-    ; 确保不是空内容
+RShift & [::
     BlockInput On
-    Send ^c ; 复制选择的内容
+    send ^x
     Send {Ctrl Up}
-    ClipWait 1
-    if (ErrorLevel || Clipboard = "")
-        return
 
     ; 等待新内容复制进来
+    ClipWait 1
     ClipboardGetTickCount:=A_TickCount
     Loop
     {
@@ -1044,8 +1040,76 @@ return
         Sleep 10
     }
 
+    ; 确保不是空内容
+    if (RegExMatch(A_Clipboard, "^\s*$"))
+    {
+        BlockInput off
+        return
+    }
+
     ClipboardChoosed:=A_Clipboard
-    ; ToolTip, %A_Clipboard%
+    FirstCRLF:=InStr(ClipboardChoosed, "`r`n")
+    if (FirstCRLF=1) ; 如果第一个字符是换行符 则从下一行开始生成代码段
+    {
+        Send {Enter}
+        NewClipboard:="{" . ClipboardChoosed
+    }
+    Else ;if (FirstCRLF!=1) ; 如果第一个字符不是换行符 则在第一个花括号后换行
+    {
+        NewClipboard:="{`r`n" . ClipboardChoosed
+    }
+
+    EndCRLF:=InStr(ClipboardChoosed, "`r`n", ,0)
+    All:=StrLen(ClipboardChoosed)
+    if (EndCRLF=StrLen(ClipboardChoosed)-1) ; 如果最后一个字符是换行符 则直接添加花括号再添加换行符
+    {
+        ; ToolTip EndCRLF%EndCRLF% All%All%
+        NewClipboard .= "}`r`n"
+    }
+    Else ;if (EndCRLF!=StrLen(ClipboardChoosed)-1) ; 如果最后一个字符不是换行符 则先添加换行符再添加花括号
+    {
+        NewClipboard .= "`r`n}"
+    }
+
+    Clipboard:=NewClipboard
+    Sleep 50
+    send ^v
+    Sleep 100
+    Send +!{f}
+    BlockInput off
+    OldClipboardHistory := A_Clipboard ; 此处需要更新记录用于下次对比
+    
+Return
+
+^d::
+    BlockInput On
+    Send ^c ; 复制选择的内容
+    Send {Ctrl Up}
+
+    ; 等待新内容复制进来
+    ClipWait 1
+    ClipboardGetTickCount:=A_TickCount
+    Loop
+    {
+        if (A_Clipboard!=OldClipboardHistory) ; ClipboardChoosed
+            Break
+        Else if (A_TickCount-ClipboardGetTickCount>100) ; 超时
+        {
+            BlockInput off
+            return
+        }
+
+        Sleep 10
+    }
+
+    ; 确保不是空内容
+    if (RegExMatch(A_Clipboard, "^\s*$"))
+    {
+        BlockInput off
+        return
+    }
+
+    ClipboardChoosed:=A_Clipboard
     if (InStr(ClipboardChoosed, "`r`n")<=0) ;没有换行
     {
         if (InStr(ClipboardChoosed, "(")=1) and (StrLen(ClipboardChoosed)>1) and (InStr(ClipboardChoosed, ")", , 0)=StrLen(ClipboardChoosed)) ; 前面有括号 不止一个字符 最后一个是括号
@@ -1150,6 +1214,7 @@ return
     }
     Else ; 存在换行
     {
+        ; 计算换行的数量
         CRLFcount := 0
         pos := 1
         while pos <= StrLen(A_Clipboard) {
@@ -1162,7 +1227,7 @@ return
         ; FirstCRLF:=InStr(ClipboardChoosed, "`r`n")
         ; ToolTip, CRLFcount%CRLFcount%`nFirstCRLF%FirstCRLF%
 
-        if (CRLFcount=1)
+        if (CRLFcount=1) ; 只有一个换行 且在开头 跳转到结尾后向下复制
         {
             ; ToolTip % InStr(ClipboardChoosed, "`r`n")
             if (InStr(ClipboardChoosed, "`r`n")=1)
@@ -1177,11 +1242,11 @@ return
             Send {Shift up}
             Send {Alt up}
         }
-        Else if (CRLFcount>1)
+        Else if (CRLFcount>1) ; 多个换行
         {
             Send {Shift Down}
             FirstCRLF:=InStr(ClipboardChoosed, "`r`n")
-            if (FirstCRLF=1)
+            if (FirstCRLF=1) ; 如果第一个字符是换行符 此行不复制向下选择一行
             {
                 Send {Right}
                 Sleep 100
@@ -1194,12 +1259,12 @@ return
 
             NewClipboard:=StrReplace(ClipboardChoosed, "`r`n") ; 去掉复制内容中的CRLF换行
             NewClipboard:=RegExReplace(ClipboardChoosed, "\s", "") ; 去掉复制内容中的空格
+
             FirstBrace:=InStr(NewClipboard, "{")
             EndBrace:=InStr(NewClipboard, "}", , 0)
             ; NewClipboardMax:=StrLen(NewClipboard)
             ; ToolTip, %NewClipboard%`nFirstBrace%FirstBrace% EndBrace%EndBrace% NewClipboardMax%NewClipboardMax%
-
-            if (FirstBrace=1) and (EndBrace=StrLen(NewClipboard))
+            if (FirstBrace=1) and (EndBrace=StrLen(NewClipboard)) ; 如果复制内容是代码段 在代码段前加else
             {
                 Sleep 100
                 Send {Up}
@@ -1209,7 +1274,7 @@ return
                 Send {Tab}
             }
 
-            IfCodeSection:=InStr(NewClipboard, "if")
+            IfCodeSection:=InStr(NewClipboard, "if") ; 如果复制内容开头是if 在代码段前加else if并保持同样格式
             if (IfCodeSection=1)
             {
                 Sleep 100
@@ -1221,6 +1286,7 @@ return
         }
     }
     Sleep 100
+    OldClipboardHistory := A_Clipboard ; 此处需要更新记录用于下次对比
     Clipboard:=OldClipboardHistory
     BlockInput Off
     KeyWait Ctrl
@@ -1369,11 +1435,8 @@ b64Decode(string)
     BlockInput On
     Send ^c ; 复制选择的内容
     Send {Ctrl Up}
-    ClipWait 1
-    if (ErrorLevel || Clipboard = "")
-        return
-
     ; 等待新内容复制进来
+    ClipWait 1
     ClipboardGetTickCount:=A_TickCount
     Loop
     {
@@ -1388,6 +1451,13 @@ b64Decode(string)
         Sleep 10
     }
 
+    ; 确保不是空内容
+    if (RegExMatch(A_Clipboard, "^\s*$"))
+    {
+        BlockInput off
+        return
+    }
+
     B64Text:=A_Clipboard
     BlockInput Off
     Menu B64Tray, Show
@@ -1399,6 +1469,7 @@ Encode:
     Clipboard:=B64Text
     Send ^v
     Sleep 100
+    OldClipboardHistory := A_Clipboard ; 此处需要更新记录用于下次对比
     Clipboard:=OldClipboardHistory
 Return
 
@@ -1408,9 +1479,9 @@ Decode:
     Clipboard:=B64Text
     Send ^v
     Sleep 100
+    OldClipboardHistory := A_Clipboard ; 此处需要更新记录用于下次对比
     Clipboard:=OldClipboardHistory
 Return
-
 
 ; 强制半角
 $`::Send {Text}``
