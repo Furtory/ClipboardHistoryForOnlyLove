@@ -74,6 +74,7 @@ DeleteClipboardPos ; 最近一次被删除剪贴板的内容现在在数组中�
     Menu Tray, Add
     Menu Tray, Add, 中键呼出, 中键呼出 ;添加新的右键菜单
     Menu Tray, Add, 智能帮助, 智能帮助 ;添加新的右键菜单
+    Menu Tray, Add, 颜色转换, 颜色转换 ;添加新的右键菜单
     Menu Tray, Add, Base64编解码, Base64编解码 ;添加新的右键菜单
     Menu Tray, Add
     Menu Tray, Add, 撤回操作, 撤回操作 ;添加新的右键菜单
@@ -82,9 +83,6 @@ DeleteClipboardPos ; 最近一次被删除剪贴板的内容现在在数组中�
     Menu Tray, Add
     Menu Tray, Add, 重启软件, 重启软件 ;添加新的右键菜单
     Menu Tray, Add, 退出软件, 退出软件 ;添加新的右键菜单
-
-    Menu B64Tray, Add, Encode编码, Encode ;添加新的右键菜单
-    Menu B64Tray, Add, Decode解码, Decode ;添加新的右键菜单
 
     autostartLnk:=A_StartupCommon . "\ClipboardHistoryRecorder.lnk" ;开机启动文件的路径
     IfExist, % autostartLnk ;检查开机启动的文件是否存在
@@ -126,12 +124,24 @@ DeleteClipboardPos ; 最近一次被删除剪贴板的内容现在在数组中�
         Iniread Base64编解码, History.ini, Settings, Base64编解码 ;从ini文件读取
         if (Base64编解码=1)
         {
+            Menu HotTray, Add, Base64 Encode编码, Encode ;添加新的右键菜单
+            Menu HotTray, Add, Base64 Decode解码, Decode ;添加新的右键菜单
             Menu Tray, Check, Base64编解码 ;右键菜单打勾
         }
-        Else
+
+        Iniread 颜色转换, History.ini, Settings, 颜色转换 ;从ini文件读取
+        if (颜色转换=1)
         {
-            Hotkey !x, Off
+            if (Base64编解码=1)
+            {
+                Menu HotTray, Add
+            }
+            Menu HotTray, Add, RGB Transform转换, RGB_Transform ;添加新的右键菜单
+            Menu Tray, Check, 颜色转换 ;右键菜单打勾
         }
+
+        if (Base64编解码!=1) and (颜色转换!=1)
+            Hotkey !x, Off
 
         Iniread 智能帮助, History.ini, Settings, 智能帮助 ;从ini文件读取
         if (智能帮助=1)
@@ -191,6 +201,9 @@ DeleteClipboardPos ; 最近一次被删除剪贴板的内容现在在数组中�
 
         Base64编解码:=0
         IniWrite %Base64编解码%, History.ini, Settings, Base64编解码 ;写入设置到ini文件
+
+        颜色转换:=0
+        IniWrite %颜色转换%, History.ini, Settings, 颜色转换 ;写入设置到ini文件
     }
 
     ; 软件初始运行时记录当前的剪贴板内容
@@ -231,7 +244,7 @@ RefreshMenu()
 }
 
 使用教程:
-    MsgBox, , 剪贴板历史记录使用教程, 记录白名单软件内Ctrl+C Ctrl+X行为产生的剪贴板历史`n你可以修改源码更改为自定义的快捷键和白名单`n如果复制了相同的内容不会添加重复的条目`n而生将重复的条目挪到最前`n剪贴板历史记录会保存在本地的History.ini内`n即使重启电脑也不会丢失剪贴板历史记录`n超出长度或删除的剪贴板历史记录会存在HistoryRecycleBin.txt内`n`n呼出剪贴板历史记录`n按下Alt+V打开剪贴板历史记录菜单`n你也可以在右键菜单中启用中键快捷呼出`n`n呼出后`n按住右键后再点击 可以顶置剪贴板历史记录`n按住侧键后再点击 可以上下调整剪贴板历史记录顺序`n按住Ctrl键后再点击 可以删除选中的剪贴板历史记录`n按下Ctrl + Shift + D 清除全部的剪贴板历史记录`n`n编辑器专属功能`n按下Ctrl+D可以根据按下次数复制选中的内容`n自动根据前后文在两段括号中间键入and或者or`n如果开头是if则为下一段前增加else`n使用Alt+X可以Base64编解码选中的文字`n`n按下F1可以自动打开AutoHotKey帮助并跳转到选中内容`n可指定编辑器内中文输入法下强制使用半角符号`n`n黑钨重工出品 免费开源`n更多免费软件请到QQ频道AutoHotKey12
+    MsgBox, , 剪贴板历史记录使用教程, 记录白名单软件内Ctrl+C Ctrl+X行为产生的剪贴板历史`n你可以修改源码更改为自定义的快捷键和白名单`n如果复制了相同的内容不会添加重复的条目`n而生将重复的条目挪到最前`n剪贴板历史记录会保存在本地的History.ini内`n即使重启电脑也不会丢失剪贴板历史记录`n超出记录长度上限或被删除的剪贴板历史记录`n会存在软件同目录下的HistoryRecycleBin.txt内`n`n呼出剪贴板历史记录`n按下Alt+V打开剪贴板历史记录菜单`n你也可以在右键菜单中启用中键快捷呼出`n`n呼出后`n按住右键后再点击 可以顶置剪贴板历史记录`n按住侧键后再点击 可以上下调整剪贴板历史记录顺序`n按住Ctrl键后再点击 可以删除选中的剪贴板历史记录`n按下Ctrl + Shift + D 清除全部的剪贴板历史记录`n`n编辑器专属功能`n按下Ctrl+D可以根据按下次数复制选中的内容`n自动根据前后文在两段括号中间键入and或者or`n如果开头是if则为下一段前增加else`n右Shift+花括号左将选中内容前后加上 { } 形成代码块`n`n使用Alt+X打开拓展菜单`nBase64编解码选中的文字`n颜色10进制和16进制互相转换`n`n按下F1可以自动打开AutoHotKey帮助并跳转到选中内容`n可指定编辑器内中文输入法下强制使用半角符号`n`n黑钨重工出品 免费开源`n更多免费软件请到QQ频道AutoHotKey12
 return
 
 管理权限: ;模式切换
@@ -311,17 +324,71 @@ Base64编解码: ;模式切换
     if (Base64编解码=1)
     {
         Base64编解码:=0
+        Menu HotTray, DeleteAll
+        if (颜色转换=1)
+        {
+            Menu HotTray, Add, RGB Transform转换, RGB_Transform ;添加新的右键菜单
+
+        }
         IniWrite %Base64编解码%, History.ini, Settings, Base64编解码 ;写入设置到ini文件
         Menu Tray, UnCheck, Base64编解码 ;右键菜单不打勾
     }
     Else
     {
         Base64编解码:=1
+        if (颜色转换=1)
+        {
+            Menu HotTray, DeleteAll
+        }
+        Menu HotTray, Add, Base64 Encode编码, Encode ;添加新的右键菜单
+        Menu HotTray, Add, Base64 Decode解码, Decode ;添加新的右键菜单
+        if (颜色转换=1)
+        {
+            Menu HotTray, Add
+            Menu HotTray, Add, RGB Transform转换, RGB_Transform ;添加新的右键菜单
+
+        }
+        Hotkey !x, On
         IniWrite %Base64编解码%, History.ini, Settings, Base64编解码 ;写入设置到ini文件
         Menu Tray, Check, Base64编解码 ;右键菜单打勾
     }
+
+    if (Base64编解码!=1) and (颜色转换!=1)
+        Hotkey !x, Off
     Critical, Off
 return
+
+颜色转换:
+    Critical, On
+    if (颜色转换=1)
+    {
+        颜色转换:=0
+        Menu HotTray, DeleteAll
+        if (Base64编解码=1)
+        {
+            Menu HotTray, Add, Base64 Encode编码, Encode ;添加新的右键菜单
+            Menu HotTray, Add, Base64 Decode解码, Decode ;添加新的右键菜单
+        }
+        IniWrite %颜色转换%, History.ini, Settings, 颜色转换 ;写入设置到ini文件
+        Menu Tray, UnCheck, 颜色转换 ;右键菜单不打勾
+    }
+    Else
+    {
+        颜色转换:=1
+        if (Base64编解码=1)
+        {
+            Menu HotTray, Add
+        }
+        Menu HotTray, Add, RGB Transform转换, RGB_Transform ;添加新的右键菜单
+        Hotkey !x, On
+        IniWrite %颜色转换%, History.ini, Settings, 颜色转换 ;写入设置到ini文件
+        Menu Tray, Check, 颜色转换 ;右键菜单打勾
+    }
+
+    if (Base64编解码!=1) and (颜色转换!=1)
+        Hotkey !x, Off
+    Critical, Off
+Return
 
 智能帮助: ;模式切换
     Critical, On
@@ -1049,7 +1116,7 @@ RShift & [::
 
     ClipboardChoosed:=A_Clipboard
     FirstCRLF:=InStr(ClipboardChoosed, "`r`n")
-    if (FirstCRLF=1) ; 如果第一个字符是换行符 则从下一行开始生成代码段
+    if (FirstCRLF=1) ; 如果第一个字符是换行符 则从下一行开始生成代码块
     {
         Send {Enter}
         NewClipboard:="{" . ClipboardChoosed
@@ -1071,14 +1138,13 @@ RShift & [::
         NewClipboard .= "`r`n}"
     }
 
+    OldClipboardHistory := NewClipboard ; 此处需要更新记录用于下次对比
     Clipboard:=NewClipboard
     Sleep 50
     send ^v
     Sleep 100
     Send +!{f}
     BlockInput off
-    OldClipboardHistory := A_Clipboard ; 此处需要更新记录用于下次对比
-    
 Return
 
 ^d::
@@ -1264,7 +1330,7 @@ Return
             EndBrace:=InStr(NewClipboard, "}", , 0)
             ; NewClipboardMax:=StrLen(NewClipboard)
             ; ToolTip, %NewClipboard%`nFirstBrace%FirstBrace% EndBrace%EndBrace% NewClipboardMax%NewClipboardMax%
-            if (FirstBrace=1) and (EndBrace=StrLen(NewClipboard)) ; 如果复制内容是代码段 在代码段前加else
+            if (FirstBrace=1) and (EndBrace=StrLen(NewClipboard)) ; 如果复制内容是代码块 在代码块前加else
             {
                 Sleep 100
                 Send {Up}
@@ -1274,7 +1340,7 @@ Return
                 Send {Tab}
             }
 
-            IfCodeSection:=InStr(NewClipboard, "if") ; 如果复制内容开头是if 在代码段前加else if并保持同样格式
+            IfCodeSection:=InStr(NewClipboard, "if") ; 如果复制内容开头是if 在代码块前加else if并保持同样格式
             if (IfCodeSection=1)
             {
                 Sleep 100
@@ -1285,8 +1351,8 @@ Return
             }
         }
     }
+    OldClipboardHistory := NewClipboard ; 此处需要更新记录用于下次对比
     Sleep 100
-    OldClipboardHistory := A_Clipboard ; 此处需要更新记录用于下次对比
     Clipboard:=OldClipboardHistory
     BlockInput Off
     KeyWait Ctrl
@@ -1429,7 +1495,7 @@ b64Decode(string)
 }
 
 !x::
-    if (Base64编解码!=1)
+    if (Base64编解码!=1) and (颜色转换!=1)
         Return
 
     BlockInput On
@@ -1458,30 +1524,110 @@ b64Decode(string)
         return
     }
 
-    B64Text:=A_Clipboard
+    HotMenuClipboardChoosed:=A_Clipboard
+    HotMenuClipboardChoosed:=StrReplace(HotMenuClipboardChoosed, "`r`n") ; 去掉复制内容中的CRLF换行
+    HotMenuClipboardChoosed:=RegExReplace(HotMenuClipboardChoosed, "\s", "") ; 去掉复制内容中的空格
     BlockInput Off
-    Menu B64Tray, Show
+    Menu HotTray, Show
 Return
 
 Encode:
+    B64Text:=HotMenuClipboardChoosed
     B64Text:=b64Encode(B64Text)
     B64Text:=StrReplace(B64Text, "`r`n")
+    OldClipboardHistory := B64Text ; 此处需要更新记录用于下次对比
     Clipboard:=B64Text
     Send ^v
     Sleep 100
-    OldClipboardHistory := A_Clipboard ; 此处需要更新记录用于下次对比
     Clipboard:=OldClipboardHistory
 Return
 
 Decode:
+    B64Text:=HotMenuClipboardChoosed
     B64Text:=b64Decode(B64Text)
     B64Text:=StrReplace(B64Text, "`r`n")
+    OldClipboardHistory := B64Text ; 此处需要更新记录用于下次对比
     Clipboard:=B64Text
     Send ^v
     Sleep 100
-    OldClipboardHistory := A_Clipboard ; 此处需要更新记录用于下次对比
     Clipboard:=OldClipboardHistory
 Return
+
+; 示例颜色值
+color := "0xFF5733" ; 16进制颜色值 RGB
+color := "FF5733" ; 16进制颜色值 RGB
+color := "0xFF57331c" ; 16进制颜色值 RGBA
+color := "FF57331c" ; 16进制颜色值 RGBA
+color := "255,87,51" ; 10进制颜色值 RGB
+color := "255,87,51,255" ; 10进制RGBA颜色值 RGBA
+
+RGB_Transform:
+    if (Substr(HotMenuClipboardChoosed, 1, 2) = "0x")
+        ColorText:=StrReplace(HotMenuClipboardChoosed, "0x") ; 去掉16进制颜色值前缀
+    else
+        ColorText:=HotMenuClipboardChoosed
+
+    if (IsHexColor(ColorText)) ; 如果是16进制颜色值
+    {
+        ; ToolTip 如果是16进制颜色值 %ColorText%
+        ColorText := HexToRGB(ColorText)
+    }
+    else ; 如果是10进制颜色值
+    {
+        ; ToolTip 如果是10进制颜色值 %ColorText%
+        ColorText := "0x" . RGBToHex(ColorText)
+    }
+    OldClipboardHistory := B64Text ; 此处需要更新记录用于下次对比
+    Clipboard:=ColorText
+    Send ^v
+    Sleep 100
+    Clipboard:=OldClipboardHistory
+Return
+
+IsHexColor(color)
+{
+    return RegExMatch(color, "^[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?$") ; 16进制颜色值
+}
+
+HexToRGB(color) ; 16进制颜色值转10进制颜色值
+{
+    hex := "0x" . color
+
+    if (StrLen(color) = 8)
+    {
+        ; RGBA
+        r := (hex >> 24) & 0xFF
+        g := (hex >> 16) & 0xFF
+        b := (hex >> 8) & 0xFF
+        a := hex & 0xFF
+        return Format("{1}, {2}, {3}, {4}", r, g, b, a)
+    }
+    else
+    {
+        ; RGB
+        r := (hex >> 16) & 0xFF
+        g := (hex >> 8) & 0xFF
+        b := hex & 0xFF
+        return Format("{1}, {2}, {3}", r, g, b)
+    }
+}
+
+RGBToHex(color) ; 10进制颜色值转16进制颜色值
+{
+    SplitColor := StrSplit(color, ",")
+    r := Format("{:02X}", SplitColor[1])
+    g := Format("{:02X}", SplitColor[2])
+    b := Format("{:02X}", SplitColor[3])
+    if (SplitColor.Length() == 4)
+    {
+        a := Format("{:02X}", SplitColor[4])
+        return r g b a
+    }
+    else
+    {
+        return r g b
+    }
+}
 
 ; 强制半角
 $`::Send {Text}``
