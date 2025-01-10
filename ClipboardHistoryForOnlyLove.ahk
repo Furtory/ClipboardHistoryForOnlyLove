@@ -7,8 +7,11 @@ AHK正版官方论坛https://www.autohotkey.com/boards/viewforum.php?f=26
 本人所有教程和脚本严禁转载到此收费论坛以防被用于收费盈利 https://www.autoahk.com/
 
 如果你要进行二次开发 以下变量可能帮到你
-ClipboardHistory ; 剪贴板历史记录
-ClipboardHistoryRecord ; 修改/删除前的剪贴板历史记录 撤回后会被重置为空数组 只可撤回1次
+UserClipboardRecord ; 用户Ctrl+C Ctrl+X等主动操作产生的剪贴板历史记录
+OutputClipboardRecord ; 生成内容参数的剪贴板历史记录
+
+ClipboardHistory ; 剪贴板历史记录 是数组 包含多个记录
+ClipboardHistoryRecord ; 修改/删除前的剪贴板历史记录 是数组 撤回后会被重置为空数组 只可撤回1次
 
 TopClipboard ; 最近一次被顶置剪贴板的内容
 TopMenuCount ; 当前的顶置菜单数量
@@ -207,7 +210,7 @@ DeleteClipboardPos ; 最近一次被删除剪贴板的内容现在在数组中�
     }
 
     ; 软件初始运行时记录当前的剪贴板内容
-    OldClipboardHistory := A_Clipboard
+    UserClipboardRecord := A_Clipboard
 
     if (WhiteList="") or (WhiteList="ERROR")
     {
@@ -244,7 +247,7 @@ RefreshMenu()
 }
 
 使用教程:
-    MsgBox, , 剪贴板历史记录使用教程, 记录白名单软件内Ctrl+C Ctrl+X行为产生的剪贴板历史`n你可以修改源码更改为自定义的快捷键和白名单`n如果复制了相同的内容不会添加重复的条目`n而生将重复的条目挪到最前`n剪贴板历史记录会保存在本地的History.ini内`n即使重启电脑也不会丢失剪贴板历史记录`n超出记录长度上限或被删除的剪贴板历史记录`n会存在软件同目录下的HistoryRecycleBin.txt内`n`n呼出剪贴板历史记录`n按下Alt+V打开剪贴板历史记录菜单`n你也可以在右键菜单中启用中键快捷呼出`n`n呼出后`n按住右键后再点击 可以顶置剪贴板历史记录`n按住侧键后再点击 可以上下调整剪贴板历史记录顺序`n按住Ctrl键后再点击 可以删除选中的剪贴板历史记录`n按下Ctrl + Shift + D 清除全部的剪贴板历史记录`n`n编辑器专属功能`n按下Ctrl+D可以根据按下次数复制选中的内容`n自动根据前后文在两段括号中间键入and或者or`n如果开头是if则为下一段前增加else`n右Shift+花括号左将选中内容前后加上 { } 形成代码块`n`n使用Alt+X打开拓展菜单`nBase64编解码选中的文字`n颜色10进制和16进制互相转换`n`n按下F1可以自动打开AutoHotKey帮助并跳转到选中内容`n可指定编辑器内中文输入法下强制使用半角符号`n`n黑钨重工出品 免费开源`n更多免费软件请到QQ频道AutoHotKey12
+    MsgBox, , 独爱剪贴板使用教程, 记录独爱白名单软件内 用户主动行为产生的剪贴板历史`n主动行为指使用 Ctrl + C 或 Ctrl + X 快捷键`n自定义的主动行为快捷键和白名单需要修改源码`n相同的内容不会添加为重复的条目`n而是将重复的条目挪到菜单最上面`n即使重启电脑也不会丢失剪贴板历史记录`n菜单中显示的剪贴板历史记录保存在软件同目录下的History.ini内`n超出记录长度上限或被删除的剪贴板历史记录会存在软件同目录下的HistoryRecycleBin.txt内`n`n呼出剪贴板历史记录菜单`n    按下Alt+V打开剪贴板历史记录菜单`n    修改呼出菜单的快捷键需要修改源码`n    你还可以在右键菜单中启用中键快捷呼出`n    按下 Ctrl + Shift + D 清除全部的剪贴板历史记录`n`n呼出后`n    按住右键后再点击 可以顶置剪贴板历史记录`n    按住侧键后再点击 可以上下调整剪贴板历史记录顺序`n    按住Ctrl键后再点击 可以删除选中的剪贴板历史记录`n`n编辑器专属功能`n`n    按下 Ctrl + D 可以根据按下次数复制选中的内容`n    如果是被 ( ) 括起来的 则自动根据前后文在两段括号中间键入 and 或者 or`n    如果开头是 if 或者 是被 { } 括起来的代码段 则在复制的代码段前自动添加 else`n`n    右Shift+花括号右 ] 将选中内容前后加上 { } 包成代码块`n`n    使用Alt+X打开拓展菜单`n    使用 Base64 编码或解码选中的文字`n    颜色 10进制 和 16进制 之间互相转换`n`n    按下F1可以自动打开AutoHotKey帮助并跳转到选中内容`n`n    可指定编辑器内中文输入法下强制使用半角符号`n`n注意:以上编辑器专属功能需要编辑器快捷键配合!`n    向下复制 Shift + Alt + 下箭头`n    缩进格式化 Shift + Alt + F`n`n黑钨重工出品 免费开源 https://github.com/Furtory`n学习交流和更多免费软件 请到QQ频道AutoHotKey12
 return
 
 管理权限: ;模式切换
@@ -695,9 +698,6 @@ Return
 ; 监听 Ctrl+C 或 Ctrl+X 事件以保存剪贴板内容 在最前面加~不会劫持按键
 ~$^c::
 ~$^x::
-    if (OldClipboardHistory="")
-        OldClipboardHistory := A_Clipboard
-
     ; 不在白名单内不添加到剪贴板内
     GoSub, 白名单
     if (白名单=0)
@@ -708,10 +708,10 @@ Return
     ClipboardGetTickCount:=A_TickCount
     Loop
     {
-        if (A_Clipboard!=OldClipboardHistory) ; 新内容和旧内容不一样
+        if (A_Clipboard!=UserClipboardRecord) ; 新内容和旧内容不一样
             Break
-        Else if (A_TickCount-ClipboardGetTickCount>1000) ; 超时
-            Return
+        Else if (A_TickCount-ClipboardGetTickCount>200) ; 超时
+            Break
 
         Sleep 30
     }
@@ -720,14 +720,14 @@ Return
     if (RegExMatch(A_Clipboard, "^\s*$"))
         return
     else
-        OldClipboardHistory := A_Clipboard ; 此处需要更新记录用于下次对比
+        UserClipboardRecord:=A_Clipboard ; 记录用户复制的剪贴板内容
 
     ; 检查是否已经存在相同的条目, 将重复的条目移到最上面
     if (ClipboardHistory!="") and (ClipboardHistory.Length()!=0)
     {
         for index, entry in ClipboardHistory
         {
-            if (entry = Clipboard)
+            if (entry = A_Clipboard)
             {
                 ; 修改前记录上次的的剪贴板历史
                 ClipboardHistoryRecord:=[]
@@ -1045,7 +1045,6 @@ ClickTheHistoryRecord:
     }
 return
 
-; 清除剪贴板历史
 ^+d:: ; Ctrl + Shift + D 用于清除历史记录
     ; 删除前记录上次的的剪贴板历史
     ClipboardHistoryRecord:=[]
@@ -1057,9 +1056,6 @@ return
 
     ; 清除数组
     ClipboardHistory:=[]
-
-    ; 清除剪贴板历史
-    OldClipboardHistory:=""
 
     ; 清除GUI菜单
     if (ClipboardAlreadyRecorded=1)
@@ -1086,17 +1082,18 @@ return
 
 ; 如果你需要添加白名单请复制并填入对应的进程名
 #If WinActive("ahk_exe Code.exe") or WinActive("ahk_exe Notepad--.exe") ; 以下代码只在指定软件内运行
-RShift & [::
+RShift & ]::
     BlockInput On
+    Send {Shift Up}
+    Sleep 50
     send ^x
     Send {Ctrl Up}
 
-    ; 等待新内容复制进来
     ClipWait 1
     ClipboardGetTickCount:=A_TickCount
     Loop
     {
-        if (A_Clipboard!=OldClipboardHistory) ; ClipboardChoosed
+        if (A_Clipboard!=ClipboardBefore) ; 新内容和旧内容不一样
             Break
         Else if (A_TickCount-ClipboardGetTickCount>100) ; 超时
         {
@@ -1128,9 +1125,9 @@ RShift & [::
 
     EndCRLF:=InStr(ClipboardChoosed, "`r`n", ,0)
     All:=StrLen(ClipboardChoosed)
+    ; ToolTip EndCRLF%EndCRLF% All%All%
     if (EndCRLF=StrLen(ClipboardChoosed)-1) ; 如果最后一个字符是换行符 则直接添加花括号再添加换行符
     {
-        ; ToolTip EndCRLF%EndCRLF% All%All%
         NewClipboard .= "}`r`n"
     }
     Else ;if (EndCRLF!=StrLen(ClipboardChoosed)-1) ; 如果最后一个字符不是换行符 则先添加换行符再添加花括号
@@ -1138,17 +1135,20 @@ RShift & [::
         NewClipboard .= "`r`n}"
     }
 
-    OldClipboardHistory := NewClipboard ; 此处需要更新记录用于下次对比
+    OutputClipboardRecord := NewClipboard ; 此处需要更新生成内容参数的剪贴板历史记录
     Clipboard:=NewClipboard
-    Sleep 50
     send ^v
-    Sleep 100
+    Sleep 50
     Send +!{f}
+    Clipboard:=UserClipboardRecord
     BlockInput off
+    KeyWait RShift
+    Send {RShift Up}
 Return
 
 ^d::
     BlockInput On
+    ClipboardBefore:=A_Clipboard
     Send ^c ; 复制选择的内容
     Send {Ctrl Up}
 
@@ -1157,7 +1157,7 @@ Return
     ClipboardGetTickCount:=A_TickCount
     Loop
     {
-        if (A_Clipboard!=OldClipboardHistory) ; ClipboardChoosed
+        if (A_Clipboard!=ClipboardBefore) ; 新内容和旧内容不一样
             Break
         Else if (A_TickCount-ClipboardGetTickCount>100) ; 超时
         {
@@ -1259,7 +1259,6 @@ Return
             ; If (Start) and (Test456) and (End)
             ; If (Start) and (函数(ABC)>1+2+3) and (End)
 
-            Sleep 100
             Send ^v ; ClipboardChoosed
             ; ToolTip Start%NewClipboardStart%`nEnd%NewClipboardEnd%
 
@@ -1273,7 +1272,6 @@ Return
         Else
         {    
             Clipboard .= ClipboardChoosed
-            Sleep 100
             Send ^v ; ClipboardChoosed
         }
         ; ToolTip 没有换行
@@ -1351,9 +1349,9 @@ Return
             }
         }
     }
-    OldClipboardHistory := NewClipboard ; 此处需要更新记录用于下次对比
-    Sleep 100
-    Clipboard:=OldClipboardHistory
+    OutputClipboardRecord := NewClipboard ; 此处需要更新生成内容参数的剪贴板历史记录
+    Clipboard:=UserClipboardRecord
+    Sleep 50
     BlockInput Off
     KeyWait Ctrl
     Send {Ctrl Up}
@@ -1389,6 +1387,7 @@ Return
 ; 功能修改自 智能F1 https://github.com/telppa/SciTE4AutoHotkey-Plus/tree/master
 F1::
     BlockInput On
+    ClipboardBefore:=A_Clipboard
     Send ^c
     BlockInput Off
 
@@ -1396,9 +1395,9 @@ F1::
     ClipboardGetTickCount:=A_TickCount
     Loop
     {
-        if (A_Clipboard!=OldClipboardHistory) ; 新内容和旧内容不一样
+        if (A_Clipboard!=ClipboardBefore) ; 新内容和旧内容不一样
             Break
-        Else if (A_TickCount-ClipboardGetTickCount>1000) ; 超时
+        Else if (A_TickCount-ClipboardGetTickCount>200) ; 超时
             Return
         Sleep 30
     }
@@ -1432,7 +1431,7 @@ F1::
     oWB.querySelector("INPUT").value := A_Clipboard             ; 输入关键词。
     ControlSend, , {Enter}{Enter}, ahk_pid %PID%         ; 按两下回车进行搜索。
     oWB.getElementsByTagName("BUTTON")[1].click()        ; 目录按钮。
-    Clipboard:=OldClipboardHistory
+    Clipboard:=UserClipboardRecord
 Return
 
 IE_GetWB(PID) { ; get the parent windows & coord from the element
@@ -1499,6 +1498,7 @@ b64Decode(string)
         Return
 
     BlockInput On
+    ClipboardBefore:=A_Clipboard
     Send ^c ; 复制选择的内容
     Send {Ctrl Up}
     ; 等待新内容复制进来
@@ -1506,7 +1506,7 @@ b64Decode(string)
     ClipboardGetTickCount:=A_TickCount
     Loop
     {
-        if (A_Clipboard!=OldClipboardHistory) ; ClipboardChoosed
+        if (A_Clipboard!=ClipboardBefore) ; 新内容和旧内容不一样
             Break
         Else if (A_TickCount-ClipboardGetTickCount>100) ; 超时
         {
@@ -1535,22 +1535,22 @@ Encode:
     B64Text:=HotMenuClipboardChoosed
     B64Text:=b64Encode(B64Text)
     B64Text:=StrReplace(B64Text, "`r`n")
-    OldClipboardHistory := B64Text ; 此处需要更新记录用于下次对比
     Clipboard:=B64Text
     Send ^v
     Sleep 100
-    Clipboard:=OldClipboardHistory
+    Clipboard:=UserClipboardRecord
+    OutputClipboardRecord := B64Text ; 此处需要更新生成内容参数的剪贴板历史记录
 Return
 
 Decode:
     B64Text:=HotMenuClipboardChoosed
     B64Text:=b64Decode(B64Text)
     B64Text:=StrReplace(B64Text, "`r`n")
-    OldClipboardHistory := B64Text ; 此处需要更新记录用于下次对比
     Clipboard:=B64Text
     Send ^v
     Sleep 100
-    Clipboard:=OldClipboardHistory
+    Clipboard:=UserClipboardRecord
+    OutputClipboardRecord := B64Text ; 此处需要更新生成内容参数的剪贴板历史记录
 Return
 
 ; 示例颜色值
@@ -1577,11 +1577,11 @@ RGB_Transform:
         ; ToolTip 如果是10进制颜色值 %ColorText%
         ColorText := "0x" . RGBToHex(ColorText)
     }
-    OldClipboardHistory := B64Text ; 此处需要更新记录用于下次对比
     Clipboard:=ColorText
     Send ^v
     Sleep 100
-    Clipboard:=OldClipboardHistory
+    Clipboard:=UserClipboardRecord
+    OutputClipboardRecord := B64Text ; 此处需要更新生成内容参数的剪贴板历史记录
 Return
 
 IsHexColor(color)
