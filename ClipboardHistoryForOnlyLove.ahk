@@ -1084,6 +1084,7 @@ return
 #If WinActive("ahk_exe Code.exe") or WinActive("ahk_exe Notepad--.exe") ; 以下代码只在指定软件内运行
 RShift & ]::
     BlockInput On
+    ClipboardBefore:=A_Clipboard
     Send {Shift Up}
     Sleep 50
     send ^x
