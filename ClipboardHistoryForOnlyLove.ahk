@@ -13,11 +13,11 @@ OutputClipboardRecord ; 生成内容参数的剪贴板历史记录
 ClipboardHistory ; 剪贴板历史记录 是数组 包含多个记录
 ClipboardHistoryRecord ; 修改/删除前的剪贴板历史记录 是数组 撤回后会被重置为空数组 只可撤回1次
 
-TopClipboard ; 最近一次被顶置剪贴板的内容
 TopMenuCount ; 当前的顶置菜单数量
-TopMenuCountRecord ; 修改前的顶置菜单数量记录 撤回后会被重置为空 只可撤回1次
+TopClipboard ; 最近一次被顶置剪贴板的内容
 OldTopClipboardPos ; 最近一次被顶置剪贴板的内容之前在数组中的位置
 NewTopClipboardPos ; 最近一次被顶置剪贴板的内容现在在数组中的位置
+TopMenuCountRecord ; 修改前的顶置菜单数量记录 撤回后会被重置为空 只可撤回1次
 
 MoveClipboard ; 最近一次被移动剪贴板的内容
 OldMoveClipboardPos ; 最近一次被移动剪贴板的内容之前在数组中的位置
@@ -226,15 +226,47 @@ RefreshMenu()
 
     Loop % ClipboardHistory.MaxIndex()
     {
+        ; 从ClipboardHistory中提取不超过长度上限的部分字符串
         ; NewClipboard:=ClipboardHistory[ClipboardHistory.MaxIndex()+1-A_Index] ;逆序
         NewClipboard:=SubStr(ClipboardHistory[A_Index], 1, MenuLength*3) ;顺序
-        NewClipboard:=StrReplace(NewClipboard, "`r`n",  " ┇ ") ; 去掉复制内容中的CRLF换行 转为空格显示
+
+        NewClipboard:=StrReplace(NewClipboard, "`r`n",  " ┇ ") ; 去掉复制内容中的CRLF换行 转为" ┇ "显示
         if (InStr(NewClipboard, " ┇ ")=1) ; 第一个是" ┇ " 提取第四个 菜单名称限制字符串长度
             NewClipboard:=SubStr(NewClipboard, 4)
+
         NewClipboard:=RegExReplace(NewClipboard, "\s{2,}", " ") ; 去掉复制内容中的空格
         if (InStr(NewClipboard, A_Space)=1) ; 第一个是空格 提取第二个 菜单名称限制字符串长度
             NewClipboard:=SubStr(NewClipboard, 2)
+
         NewClipboard:=SubStr(NewClipboard, 1, MenuLength) ; 菜单名称限制字符串长度
+
+        ; 条目名称内如果有宽字符则限制更短的长度
+        NarrowCount := 0
+        Loop, Parse, % NewClipboard
+        {
+            ; 判断字符是否为窄字符 0-9 a-z ! " # $ % & ' ( ) * + - . , /  < = > ? @  [ \ ] ^ _ ` { | } ~
+            if A_IsUnicode ; Unicode 官网http://www.unicode.org/charts/
+            {
+                if (Asc(A_LoopField) >= 0x30 && Asc(A_LoopField) <= 0x39) or (Asc(A_LoopField) >= 0x61 && Asc(A_LoopField) <= 0x7A) or (Asc(A_LoopField) >= 0x21 && Asc(A_LoopField) <= 0x2F) or (Asc(A_LoopField) >= 0x3A && Asc(A_LoopField) <= 0x40) or(Asc(A_LoopField) >= 0x5B && Asc(A_LoopField) <= 0x60) or(Asc(A_LoopField) >= 0x7B && Asc(A_LoopField) <= 0x7E) or (A_LoopField ~= "^\s*$") or (A_LoopField = "┇")
+                {
+                    NarrowCount++
+                }
+            }
+            else ; Ascii 官网https://www.unicode.org/charts/PDF/U0000.pdf
+            {
+                if (Asc(A_LoopField) >= 33 && Asc(A_LoopField) <= 65) or (Asc(A_LoopField) >= 90 && Asc(A_LoopField) <= 126) or (A_LoopField ~= "^\s*$") or (A_LoopField = "┇")
+                {
+                    NarrowCount++
+                }
+            }
+        }
+        ; ToolTip %NarrowCount%`n%NewClipboard%
+
+        if (NarrowCount<MenuLength) ;存在宽字符
+        {
+            NewClipboard:=SubStr(NewClipboard, 1, MenuLength-Ceil((MenuLength-NarrowCount)/2)) ; 菜单名称限制字符串长度
+        }
+
         Menu ClipboardHistoryMenu, Add, %NewClipboard%, ClickTheHistoryRecord, Radio ; 添加菜单
 
         if (A_Index<=TopMenuCount)
@@ -1054,6 +1086,12 @@ return
     }
     TopMenuCountRecord:=TopMenuCount
 
+    ; 删除的剪贴板记录存入回收站
+    Loop % ClipboardHistory.MaxIndex()
+    {
+        InputRecycleBin(ClipboardHistory[ClipboardHistory.MaxIndex()+1-A_Index]) ; 删除的内容存入回收站
+    }
+
     ; 清除数组
     ClipboardHistory:=[]
 
@@ -1585,9 +1623,9 @@ RGB_Transform:
     OutputClipboardRecord := B64Text ; 此处需要更新生成内容参数的剪贴板历史记录
 Return
 
-IsHexColor(color)
+IsHexColor(color) ; 判断是否是16进制颜色值
 {
-    return RegExMatch(color, "^[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?$") ; 16进制颜色值
+    return RegExMatch(color, "^[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?$") ; 16进制颜色值返回1 否则0
 }
 
 HexToRGB(color) ; 16进制颜色值转10进制颜色值
