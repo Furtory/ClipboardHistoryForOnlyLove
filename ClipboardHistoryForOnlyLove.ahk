@@ -146,6 +146,9 @@ DeleteClipboardPos ; 最近一次被删除剪贴板的内容现在在数组中�
         if (Base64编解码!=1) and (颜色转换!=1)
             Hotkey !x, Off
 
+        Iniread PID, History.ini, Settings, 智能帮助ID ;从ini文件读取
+        if (PID!="") and (PID!="ERROR")
+            oWB:=IE_GetWB(PID).document          
         Iniread 智能帮助, History.ini, Settings, 智能帮助 ;从ini文件读取
         if (智能帮助=1)
             Menu Tray, Check, 智能帮助 ;右键菜单打勾
@@ -244,7 +247,7 @@ RefreshMenu()
         NarrowCount := 0
         Loop, Parse, % NewClipboard
         {
-            ; 判断字符是否为窄字符 0-9 a-z ! " # $ % & ' ( ) * + - . , /  < = > ? @  [ \ ] ^ _ ` { | } ~
+            ; 判断字符是否为窄字符 0-9 a-z ! " # $ % & ' ( ) * + - . , / < = > ? @ [ \ ] ^ _ ` { | } ~
             if A_IsUnicode ; Unicode 官网http://www.unicode.org/charts/
             {
                 if (Asc(A_LoopField) >= 0x30 && Asc(A_LoopField) <= 0x39) or (Asc(A_LoopField) >= 0x61 && Asc(A_LoopField) <= 0x7A) or (Asc(A_LoopField) >= 0x21 && Asc(A_LoopField) <= 0x2F) or (Asc(A_LoopField) >= 0x3A && Asc(A_LoopField) <= 0x40) or(Asc(A_LoopField) >= 0x5B && Asc(A_LoopField) <= 0x60) or(Asc(A_LoopField) >= 0x7B && Asc(A_LoopField) <= 0x7E) or (A_LoopField ~= "^\s*$") or (A_LoopField = "┇")
@@ -754,21 +757,21 @@ Return
     else
         UserClipboardRecord:=A_Clipboard ; 记录用户复制的剪贴板内容
 
+    ; 修改前记录上次的的剪贴板历史
+    ClipboardHistoryRecord:=[]
+    for index, value in ClipboardHistory
+    {
+        ClipboardHistoryRecord.Push(value)
+    }
+    TopMenuCountRecord:=TopMenuCount
+
     ; 检查是否已经存在相同的条目, 将重复的条目移到最上面
-    if (ClipboardHistory!="") and (ClipboardHistory.Length()!=0)
+    if (ClipboardHistory!="") and (ClipboardHistory.Length()!=0) and (ClipboardAlreadyRecorded=1)
     {
         for index, entry in ClipboardHistory
         {
             if (entry = A_Clipboard)
             {
-                ; 修改前记录上次的的剪贴板历史
-                ClipboardHistoryRecord:=[]
-                for index, value in ClipboardHistory
-                {
-                    ClipboardHistoryRecord.Push(value)
-                }
-                TopMenuCountRecord:=TopMenuCount
-
                 ; ToolTip A_Index%A_Index%
                 If (A_Index<=TopMenuCount) ; 是顶置菜单
                 {
@@ -1441,17 +1444,17 @@ F1::
         Sleep 30
     }
 
-    AutoHotKeyHelpPath:=A_ScriptDir
-    AutoHotKeyHelpPath.="\AutoHotkey.chm"
+    AutoHotKeyHelpPath:=A_ScriptDir . "\AutoHotkey.chm"
     if (PID="") or (PID="ERROR") or (WinExist("ahk_pid "PID)=0)                           ; 首次打开或窗口被最小化（为0）或窗口被关闭（为空）。
     {
         Run % AutoHotKeyHelpPath,,,PID                          ; 打开帮助文件。
+        IniWrite %PID%, History.ini, Settings, 智能帮助ID ; 记录PID到ini文件
         WinWait ahk_pid %PID%                             ; 这行不能少，否则初次打开无法输入文本并搜索。
         WinActivate ahk_pid %PID%                         ; 这行不能少，否则初次打开无法输入文本并搜索。
         SysGet WorkArea, MonitorWorkArea, 1               ; 获取工作区尺寸，即不含任务栏的屏幕尺寸。
         DPIScale:=A_ScreenDPI/96
-        W:=(WorkAreaRight-WorkAreaLeft)//2
-        X:=WorkAreaLeft+W+(-1+8)*DPIScale
+        W:=Round((WorkAreaRight-WorkAreaLeft)//3/120)*120
+        X:=WorkAreaRight-W-(-1+8)*DPIScale
         Y:=WorkAreaTop
         H:=WorkAreaBottom-Y+(-1+8)*DPIScale
         WinMove ahk_pid %PID%,, X, Y, W, H                ; 显示在屏幕右侧并占屏幕一半尺寸。
@@ -1598,7 +1601,7 @@ color := "FF5733" ; 16进制颜色值 RGB
 color := "0xFF57331c" ; 16进制颜色值 RGBA
 color := "FF57331c" ; 16进制颜色值 RGBA
 color := "255,87,51" ; 10进制颜色值 RGB
-color := "255,87,51,255" ; 10进制RGBA颜色值 RGBA
+color := "255,87,51,28" ; 10进制RGBA颜色值 RGBA
 
 RGB_Transform:
     if (Substr(HotMenuClipboardChoosed, 1, 2) = "0x")
