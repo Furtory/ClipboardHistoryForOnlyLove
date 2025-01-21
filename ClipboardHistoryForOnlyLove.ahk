@@ -237,7 +237,8 @@ RefreshMenu()
         if (InStr(NewClipboard, " ┇ ")=1) ; 第一个是" ┇ " 提取第四个 菜单名称限制字符串长度
             NewClipboard:=SubStr(NewClipboard, 4)
 
-        NewClipboard:=RegExReplace(NewClipboard, "\s{2,}", " ") ; 去掉复制内容中的空格
+        NewClipboard:=RegExReplace(NewClipboard, "`t", " ") ; 复制内容中的制表符缩进转为1个空格宽度
+        NewClipboard:=RegExReplace(NewClipboard, "\s{2,}", " ") ; 复制内容中连续的空格缩进只显示1个空格宽度
         if (InStr(NewClipboard, A_Space)=1) ; 第一个是空格 提取第二个 菜单名称限制字符串长度
             NewClipboard:=SubStr(NewClipboard, 2)
 
@@ -753,7 +754,10 @@ Return
 
     ; 确保不是空内容
     if (RegExMatch(A_Clipboard, "^\s*$"))
+    {
+        UserClipboardRecord:=A_Clipboard ; 记录用户复制的剪贴板内容
         return
+    }
     else
         UserClipboardRecord:=A_Clipboard ; 记录用户复制的剪贴板内容
 
@@ -1149,6 +1153,7 @@ RShift & ]::
     ; 确保不是空内容
     if (RegExMatch(A_Clipboard, "^\s*$"))
     {
+        UserClipboardRecord:=A_Clipboard ; 记录用户复制的剪贴板内容
         BlockInput off
         return
     }
@@ -1213,6 +1218,7 @@ Return
     ; 确保不是空内容
     if (RegExMatch(A_Clipboard, "^\s*$"))
     {
+        UserClipboardRecord:=A_Clipboard ; 记录用户复制的剪贴板内容
         BlockInput off
         return
     }
@@ -1562,6 +1568,7 @@ b64Decode(string)
     ; 确保不是空内容
     if (RegExMatch(A_Clipboard, "^\s*$"))
     {
+        UserClipboardRecord:=A_Clipboard ; 记录用户复制的剪贴板内容
         BlockInput off
         return
     }
