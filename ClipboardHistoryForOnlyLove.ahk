@@ -7,6 +7,7 @@ AHK正版官方论坛https://www.autohotkey.com/boards/viewforum.php?f=26
 本人所有教程和脚本严禁转载到此收费论坛以防被用于收费盈利 https://www.autoahk.com/
 
 如果你要进行二次开发 以下变量可能帮到你
+SameClipboard ; 复制了相同内容置为1否则为0
 UserClipboardRecord ; 用户主动操作产生的剪贴板历史记录(如Ctrl+C Ctrl+X等)
 OutputClipboardRecord ; 经过软件修改后生成的内容剪贴板历史记录
 
@@ -64,7 +65,7 @@ DeleteClipboardPos ; 最近一次被删除剪贴板的内容现在在数组中�
     SetKeyDelay 30, 50 ; 按键按住时间 和 按键发送间隔 不宜太短 VS code 响应不过来
 
     Menu Tray, Icon, %A_ScriptDir%\LOGO.ico
-    ; Menu Tray, NoStandard ;不显示默认的AHK右键菜单
+    Menu Tray, NoStandard ;不显示默认的AHK右键菜单
     Menu Tray, Add, 使用教程, 使用教程 ;添加新的右键菜单
     Menu Tray, Add
     Menu Tray, Add, 管理权限, 管理权限 ;添加新的右键菜单
@@ -80,11 +81,15 @@ DeleteClipboardPos ; 最近一次被删除剪贴板的内容现在在数组中�
     Menu Tray, Add, 颜色转换, 颜色转换 ;添加新的右键菜单
     Menu Tray, Add, Base64编解码, Base64编解码 ;添加新的右键菜单
     Menu Tray, Add
-    Menu Tray, Add, 提示音, 提示音 ;添加新的右键菜单
-    Menu Tray, Add, 自定义, 自定义 ;添加新的右键菜单
+    Menu Tray, Add, 操作提示音, 提示音 ;添加新的右键菜单
+    Menu Tray, Add, 自定义提示音, 自定义提示音 ;添加新的右键菜单
     Menu Tray, Add
     Menu Tray, Add, 撤回操作, 撤回操作 ;添加新的右键菜单
+    Menu Tray, ToggleEnable, 撤回操作 ;禁用菜单
+    撤回操作:=0
     Menu Tray, Add, 还原操作, 还原操作 ;添加新的右键菜单
+    Menu Tray, ToggleEnable, 还原操作 ;禁用菜单
+    还原操作:=0
     Menu Tray, Add, 查看回收站, 回收站 ;添加新的右键菜单
     Menu Tray, Add, 清空回收站, 清空回收站 ;添加新的右键菜单
     Menu Tray, Add
@@ -154,9 +159,11 @@ DeleteClipboardPos ; 最近一次被删除剪贴板的内容现在在数组中�
         Iniread 提示音, History.ini, Settings, 提示音 ;从ini文件读取
         if (提示音=1)
         {
-            Menu Tray, Check, 提示音 ;右键菜单打勾
+            Menu Tray, Check, 操作提示音 ;右键菜单打勾
         }
-        Iniread PromptToneFile, History.ini, Settings, 提示音路径 ;从ini文件读取
+        Iniread CopyPromptToneFile, History.ini, Settings, 复制提示音路径 ;从ini文件读取
+        Iniread CutPromptToneFile, History.ini, Settings, 剪切提示音路径 ;从ini文件读取
+        Iniread PastePromptToneFile, History.ini, Settings, 黏贴提示音路径 ;从ini文件读取
 
         Iniread PID, History.ini, Settings, 智能帮助ID ;从ini文件读取
         if (PID!="") and (PID!="ERROR")
@@ -198,8 +205,6 @@ DeleteClipboardPos ; 最近一次被删除剪贴板的内容现在在数组中�
     }
     Else
     {
-        Pos:=0
-
         TopMenuCount:=0
         IniWrite %TopMenuCount%, History.ini, Settings, TopMenuCount ;写入设置到ini文件
 
@@ -209,8 +214,13 @@ DeleteClipboardPos ; 最近一次被删除剪贴板的内容现在在数组中�
         中键呼出:=0
         IniWrite %中键呼出%, History.ini, Settings, 中键呼出 ;写入设置到ini文件
 
-        PromptToneFile:="C:\Windows\Media\Windows Unlock.wav"
-        IniWrite %PromptToneFile%, History.ini, Settings, 提示音路径 ;写入设置到ini文件
+        CopyPromptToneFile:="C:\Windows\Media\Windows Unlock.wav"
+        IniWrite %CopyPromptToneFile%, History.ini, Settings, 复制提示音路径 ;写入设置到ini文件
+        CutPromptToneFile:="C:\Windows\Media\Windows Notify Email.wav"
+        IniWrite %CutPromptToneFile%, History.ini, Settings, 剪切提示音路径 ;写入设置到ini文
+        PastePromptToneFile:="C:\Windows\Media\Windows Notify Calendar.wav"
+        IniWrite %PastePromptToneFile%, History.ini, Settings, 黏贴提示音路径 ;写入设置到ini文
+
 
         智能帮助:=0
         IniWrite %智能帮助%, History.ini, Settings, 智能帮助 ;写入设置到ini文件
@@ -302,7 +312,7 @@ RefreshMenu()
 }
 
 使用教程:
-    MsgBox, , 独爱剪贴板使用教程, 记录独爱白名单软件内 用户主动行为产生的剪贴板历史`n主动行为指使用 Ctrl + C 或 Ctrl + X 快捷键`n自定义的主动行为快捷键和白名单需要修改源码`n相同的内容不会添加为重复的条目`n而是将重复的条目挪到菜单最上面`n即使重启电脑也不会丢失剪贴板历史记录`n菜单中显示的剪贴板历史记录保存在软件同目录下的History.ini内`n超出记录长度上限或被删除的剪贴板历史记录会存在软件同目录下的HistoryRecycleBin.txt内`n`n呼出剪贴板历史记录菜单`n    按下Alt+V打开剪贴板历史记录菜单`n    修改呼出菜单的快捷键需要修改源码`n    你还可以在右键菜单中启用中键快捷呼出`n    按下 Ctrl + Shift + D 清除全部的剪贴板历史记录`n`n呼出后`n    按住右键后再点击 可以顶置剪贴板历史记录`n    按住侧键后再点击 可以上下调整剪贴板历史记录顺序`n    按住Ctrl键后再点击 可以删除选中的剪贴板历史记录`n`n编辑器专属功能`n`n    按下 Ctrl + D 可以根据按下次数复制选中的内容`n    如果是被 ( ) 括起来的 则自动根据前后文在两段括号中间键入 and 或者 or`n    如果开头是 if 或者 是被 { } 括起来的代码段 则在复制的代码段前自动添加 else`n`n    右Shift+花括号右 ] 将选中内容前后加上 { } 包成代码块`n`n    使用Alt+X打开拓展菜单`n    使用 Base64 编码或解码选中的文字`n    颜色 10进制 和 16进制 之间互相转换`n`n    按下F1可以自动打开AutoHotKey帮助并跳转到选中内容`n`n    可指定编辑器内中文输入法下强制使用半角符号`n`n注意:以上编辑器专属功能需要编辑器快捷键配合!`n    向下复制 Shift + Alt + 下箭头`n    缩进格式化 Shift + Alt + F`n`n黑钨重工出品 免费开源 https://github.com/Furtory`n学习交流和更多免费软件 请到QQ频道AutoHotKey12
+    MsgBox, , 独爱剪贴板使用教程, 记录独爱白名单软件内 用户主动行为产生的剪贴板历史`n主动行为指使用 Ctrl + C 或 Ctrl + X 快捷键`n自定义的主动行为快捷键和白名单需要修改源码`n同一内容复制两次可以提示内容`n重复内容不会添加为重复的条目`n并且自动将重复的条目挪到菜单最上面`n即使重启电脑也不会丢失剪贴板历史记录`n菜单中显示的剪贴板历史记录保存在软件同目录下的History.ini内`n超出记录长度上限或被删除的剪贴板历史记录会存在软件同目录下的HistoryRecycleBin.txt内`n`n呼出剪贴板历史记录菜单`n    按下Alt+V打开剪贴板历史记录菜单`n    修改呼出菜单的快捷键需要修改源码`n    你还可以在右键菜单中启用中键快捷呼出`n    按下 Ctrl + Shift + D 清除全部的剪贴板历史记录`n`n呼出后`n    按住右键后再点击 可以顶置剪贴板历史记录`n    按住侧键后再点击 可以上下调整剪贴板历史记录顺序`n    按住Ctrl键后再点击 可以删除选中的剪贴板历史记录`n`n编辑器专属功能`n`n    按下 Ctrl + D 可以根据按下次数复制选中的内容`n    如果是被 ( ) 括起来的 则自动根据前后文在两段括号中间键入 and 或者 or`n    如果开头是 if 或者 是被 { } 括起来的代码段 则在复制的代码段前自动添加 else`n`n    右Shift+花括号右 ] 将选中内容前后加上 { } 包成代码块`n`n    使用Alt+X打开拓展菜单`n    使用 Base64 编码或解码选中的文字`n    颜色 10进制 和 16进制 之间互相转换`n`n    按下F1可以自动打开AutoHotKey帮助并跳转到选中内容`n`n    可指定编辑器内中文输入法下强制使用半角符号`n`n注意:以上编辑器专属功能需要编辑器快捷键配合!`n    向下复制 Shift + Alt + 下箭头`n    缩进格式化 Shift + Alt + F`n`n黑钨重工出品 免费开源 https://github.com/Furtory`n学习交流和更多免费软件 请到QQ频道AutoHotKey12
 return
 
 管理权限: ;模式切换
@@ -422,13 +432,13 @@ return
     {
         提示音:=0
         IniWrite %提示音%, History.ini, Settings, 提示音 ;写入设置到ini文件
-        Menu Tray, UnCheck, 提示音 ;右键菜单不打勾
+        Menu Tray, UnCheck, 操作提示音 ;右键菜单不打勾
     }
     Else
     {
         提示音:=1
         IniWrite %提示音%, History.ini, Settings, 提示音 ;写入设置到ini文件
-        Menu Tray, Check, 提示音 ;右键菜单打勾
+        Menu Tray, Check, 操作提示音 ;右键菜单打勾
     }
 
     if (Base64编解码!=1) and (颜色转换!=1)
@@ -436,20 +446,123 @@ return
     Critical, Off
 return
 
-自定义:
-    if (WinExist("自定义提示音")!="")
+自定义提示音:
+    if (WinExist("自定义提示音")!=0)
     {
         WinActivate 自定义提示音
         Return
     }
+
+    NewCopyPromptToneFile:=CopyPromptToneFile
+    NewCutPromptToneFile:=CutPromptToneFile
+    NewPastePromptToneFile:=PastePromptToneFile
+
+    Gui 自定义提示音:+DPIScale -MinimizeBox -MaximizeBox -Resize -SysMenu -DPIScale
     Critical, On
-    FileSelectFile PromptToneFile, 3, C:\Windows\Media, 自定义提示音, *.wav
+    Gui 自定义提示音:Font, s9, Segoe UI
+    Gui 自定义提示音:Add, Text, x8 y8 w120 h30 +0x200, 复制提示音
+    Gui 自定义提示音:Add, Button, x6 y40 w30 h30 g复制提示音播放, ▶
+    Gui 自定义提示音:Add, Edit, x43 y40 w445 h30 vCopyPromptToneFile, %CopyPromptToneFile%
+    Gui 自定义提示音:Add, Button, x500 y40 w100 h30 g复制提示音路径, 选择文件
+
+    Gui 自定义提示音:Add, Text, x8 y78 w120 h30 +0x200, 剪切提示音
+    Gui 自定义提示音:Add, Button, x6 y110 w30 h30 g剪切提示音播放, ▶
+    Gui 自定义提示音:Add, Edit, x43 y110 w445 h30 vCutPromptToneFile, %CutPromptToneFile%
+    Gui 自定义提示音:Add, Button, x500 y110 w100 h30 g剪切提示音路径, 选择文件
+
+    Gui 自定义提示音:Add, Text, x8 y148 w120 h30 +0x200, 黏贴提示音
+    Gui 自定义提示音:Add, Button, x6 y180 w30 h30 g黏贴提示音播放, ▶
+    Gui 自定义提示音:Add, Edit, x43 y180 w445 h30 vPastePromptToneFile, %PastePromptToneFile%
+    Gui 自定义提示音:Add, Button, x500 y180 w100 h30 g黏贴提示音路径, 选择文件
+
+    Gui 自定义提示音:Add, Button, x7 y235 w100 h30 g提示音恢复默认, 恢复默认
+    Gui 自定义提示音:Add, Button, x388 y235 w100 h30 g提示音取消更改, 取消更改
+    Gui 自定义提示音:Add, Button, x500 y235 w100 h30 g提示音确定更改, 确定更改
+    Gui 自定义提示音:Show, w606 h275, 自定义提示音
+    Critical, Off
+Return
+
+复制提示音播放:
+    SoundPlay %CopyPromptToneFile%
+Return
+
+复制提示音路径:
+    FileSelectFile NewCopyPromptToneFile, 3, C:\Windows\Media, 自定义提示音, *.wav
     if (ErrorLevel!=1)
     {
-        IniWrite %PromptToneFile%, History.ini, Settings, 提示音路径 ;写入设置到ini文件
+        SoundPlay %NewCopyPromptToneFile%
+        GuiControl 自定义提示音:, CopyPromptToneFile, %NewCopyPromptToneFile%
+        Gui Submit, NoHide
     }
-    Critical, Off
-return
+    else
+    {
+        NewCopyPromptToneFile:=CopyPromptToneFile
+    }
+Return
+
+剪切提示音播放:
+    SoundPlay %CutPromptToneFile%
+Return
+
+剪切提示音路径:
+    FileSelectFile NewCutPromptToneFile, 3, C:\Windows\Media, 自定义提示音, *.wav
+    if (ErrorLevel!=1)
+    {
+        SoundPlay %NewCutPromptToneFile%
+        GuiControl 自定义提示音:, CutPromptToneFile, %NewCutPromptToneFile%
+        Gui Submit, NoHide
+    }
+    else
+    {
+        NewCutPromptToneFile:=CutPromptToneFile
+    }
+Return
+
+黏贴提示音播放:
+    SoundPlay %PastePromptToneFile%
+Return
+
+黏贴提示音路径:
+    FileSelectFile NewPastePromptToneFile, 3, C:\Windows\Media, 自定义提示音, *.wav
+    if (ErrorLevel!=1)
+    {
+        SoundPlay %NewPastePromptToneFile%
+        GuiControl 自定义提示音:, PastePromptToneFile, %NewPastePromptToneFile%
+        Gui Submit, NoHide
+    }
+    else
+    {
+        NewPastePromptToneFile:=PastePromptToneFile
+    }
+Return
+
+提示音恢复默认:
+    NewCopyPromptToneFile:=CopyPromptToneFile:="C:\Windows\Media\Windows Unlock.wav"
+    IniWrite %CopyPromptToneFile%, History.ini, Settings, 复制提示音路径 ;写入设置到ini文件
+    GuiControl 自定义提示音:, CopyPromptToneFile, %CopyPromptToneFile%
+
+    NewCutPromptToneFile:=CutPromptToneFile:="C:\Windows\Media\Windows Notify Email.wav"
+    IniWrite %CutPromptToneFile%, History.ini, Settings, 剪切提示音路径 ;写入设置到ini文
+    GuiControl 自定义提示音:, CutPromptToneFile, %CutPromptToneFile%
+
+    NewPastePromptToneFile:=PastePromptToneFile:="C:\Windows\Media\Windows Notify Calendar.wav"
+    IniWrite %PastePromptToneFile%, History.ini, Settings, 黏贴提示音路径 ;写入设置到ini文
+    GuiControl 自定义提示音:, PastePromptToneFile, %PastePromptToneFile%
+Return
+
+提示音取消更改:
+    Gui 自定义提示音:Destroy
+Return
+
+提示音确定更改:
+    CopyPromptToneFile:=NewCopyPromptToneFile
+    IniWrite %CopyPromptToneFile%, History.ini, Settings, 复制提示音路径 ;写入设置到ini文件
+    CutPromptToneFile:=NewCutPromptToneFile
+    IniWrite %CutPromptToneFile%, History.ini, Settings, 剪切提示音路径 ;写入设置到ini文件
+    PastePromptToneFile:=NewPastePromptToneFile
+    IniWrite %PastePromptToneFile%, History.ini, Settings, 黏贴提示音路径 ;写入设置到ini文件
+    Gui 自定义提示音:Destroy
+Return
 
 颜色转换:
     Critical, On
@@ -726,10 +839,28 @@ InputClipboardHistoryRecord(){
 撤回操作:
     ; 只能撤回到第一步
     Pos:=Pos-1
-    if (Pos<1)
+    if (Pos<=1)
     {
+        if (撤回操作=1)
+        {
+            撤回操作:=0
+            Menu Tray, ToggleEnable, 撤回操作 ;禁用菜单
+        }
+        if (还原操作=0)
+        {
+            还原操作:=1
+            Menu Tray, ToggleEnable, 还原操作 ;启用菜单
+        }
         Pos:=1
         Return
+    }
+    else
+    {
+        if (还原操作=0)
+        {
+            还原操作:=1
+            Menu Tray, ToggleEnable, 还原操作 ;启用菜单
+        }
     }
 
     if (ClipboardHistoryRecord%Pos%!="")
@@ -778,10 +909,28 @@ Return
 还原操作:
     ; 只能还原到最后一步
     Pos:=Pos+1
-    if (Pos>TopMenuCountRecord.Length())
+    if (Pos>=TopMenuCountRecord.Length())
     {
+        if (还原操作=1)
+        {
+            还原操作:=0
+            Menu Tray, ToggleEnable, 还原操作 ;禁用菜单
+        }
+        if (撤回操作=0)
+        {
+            撤回操作:=1
+            Menu Tray, ToggleEnable, 撤回操作 ;启用菜单
+        }
         Pos:=TopMenuCountRecord.Length()
         Return
+    }
+    else
+    {
+        if (撤回操作=0)
+        {
+            撤回操作:=1
+            Menu Tray, ToggleEnable, 撤回操作 ;启用菜单
+        }
     }
 
     if (ClipboardHistoryRecord%Pos%!="")
@@ -842,6 +991,7 @@ Return
     MsgBox 4, 清空回收站,  是否清空回收站吗?`n此操作不可逆! ;询问是否清空回收站
     ifMsgBox Yes
     {
+        SoundPlay C:\Windows\Media\Windows Recycle.wav
         if (FileExist(A_ScriptDir . "\HistoryRecycleBin.txt")) ; 如果文件存在则删除
         {
             FileDelete %A_ScriptDir%\HistoryRecycleBin.txt
@@ -899,25 +1049,52 @@ Return
 ; 监听 Ctrl+C 或 Ctrl+X 事件以保存剪贴板内容 在最前面加~不会劫持按键
 ~$^c::
 ~$^x::
+~$^v::
     ; 不在白名单内不添加到剪贴板内
     GoSub, 白名单
     if (白名单=0)
         Return
 
-    if (提示音=1)
-        SoundPlay %PromptToneFile%
-
     ; 等待新内容复制进来
     ClipWait 1
+
     ClipboardGetTickCount:=A_TickCount
     Loop
     {
         if (A_Clipboard!=UserClipboardRecord) ; 新内容和旧内容不一样
+        {
+            if (撤回操作=0)
+            {
+                撤回操作:=1
+                Menu Tray, ToggleEnable, 撤回操作 ;禁用菜单
+            }
+            SameClipboard:=0
             Break
-        Else if (A_TickCount-ClipboardGetTickCount>200) ; 超时
+        }
+        Else if (A_TickCount-ClipboardGetTickCount>200) ; 新内容和旧内容一样 超时
+        {
+            SameClipboard:=1
             Break
+        }
 
         Sleep 30
+    }
+
+    ; ToolTip %A_ThisHotkey%, , ,2
+    if (提示音=1) and (A_ThisHotkey="~$^c") and (SameClipboard=0)
+        SoundPlay %CopyPromptToneFile%
+    else if (提示音=1) and (A_ThisHotkey="~$^x")
+        SoundPlay %CutPromptToneFile%
+    else if (提示音=1) and (A_ThisHotkey="~$^v")
+    {
+        SoundPlay %PastePromptToneFile%
+        Return
+    }
+    else if (SameClipboard=1)
+    {
+        SoundPlay C:\Windows\Media\Windows Navigation Start.wav
+        SetTimer 剪贴板内容提示, 30
+        Return
     }
 
     ; 确保不是空内容
@@ -998,6 +1175,16 @@ Return
     RefreshMenu()
     ClipboardAlreadyRecorded:=1
 return
+
+剪贴板内容提示:
+    if (A_ThisHotkey="~$^v") or GetKeyState("Esc", "P")
+    {
+        settimer 剪贴板内容提示, Delete
+        ToolTip
+        Return
+    }
+    ToolTip %A_Clipboard%
+Return
 
 ; 显示剪贴板历史供用户选择
 中键:
@@ -1222,7 +1409,7 @@ ClickTheHistoryRecord:
             Clipboard := ClipboardHistory[A_ThisMenuItemPos-ExistTopMenu] ;顺序
 
         BlockInput On
-        Send ^v ; 自动粘贴选中的历史项
+        Send ^v ; 自动黏贴选中的历史项
         BlockInput Off
     }
 return
