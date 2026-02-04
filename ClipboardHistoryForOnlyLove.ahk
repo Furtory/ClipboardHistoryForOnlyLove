@@ -80,6 +80,9 @@ DeleteClipboardPos ; 最近一次被删除剪贴板的内容现在在数组中�
     Menu Tray, Add, 颜色转换, 颜色转换 ;添加新的右键菜单
     Menu Tray, Add, Base64编解码, Base64编解码 ;添加新的右键菜单
     Menu Tray, Add
+    Menu Tray, Add, 提示音, 提示音 ;添加新的右键菜单
+    Menu Tray, Add, 自定义, 自定义 ;添加新的右键菜单
+    Menu Tray, Add
     Menu Tray, Add, 撤回操作, 撤回操作 ;添加新的右键菜单
     Menu Tray, Add, 还原操作, 还原操作 ;添加新的右键菜单
     Menu Tray, Add, 查看回收站, 回收站 ;添加新的右键菜单
@@ -148,6 +151,13 @@ DeleteClipboardPos ; 最近一次被删除剪贴板的内容现在在数组中�
         if (Base64编解码!=1) and (颜色转换!=1)
             Hotkey !x, Off
 
+        Iniread 提示音, History.ini, Settings, 提示音 ;从ini文件读取
+        if (提示音=1)
+        {
+            Menu Tray, Check, 提示音 ;右键菜单打勾
+        }
+        Iniread PromptToneFile, History.ini, Settings, 提示音路径 ;从ini文件读取
+
         Iniread PID, History.ini, Settings, 智能帮助ID ;从ini文件读取
         if (PID!="") and (PID!="ERROR")
             oWB:=IE_GetWB(PID).document          
@@ -198,6 +208,9 @@ DeleteClipboardPos ; 最近一次被删除剪贴板的内容现在在数组中�
 
         中键呼出:=0
         IniWrite %中键呼出%, History.ini, Settings, 中键呼出 ;写入设置到ini文件
+
+        PromptToneFile:="C:\Windows\Media\Windows Unlock.wav"
+        IniWrite %PromptToneFile%, History.ini, Settings, 提示音路径 ;写入设置到ini文件
 
         智能帮助:=0
         IniWrite %智能帮助%, History.ini, Settings, 智能帮助 ;写入设置到ini文件
@@ -400,6 +413,41 @@ Base64编解码: ;模式切换
 
     if (Base64编解码!=1) and (颜色转换!=1)
         Hotkey !x, Off
+    Critical, Off
+return
+
+提示音:  ;模式切换
+    Critical, On
+    if (提示音=1)
+    {
+        提示音:=0
+        IniWrite %提示音%, History.ini, Settings, 提示音 ;写入设置到ini文件
+        Menu Tray, UnCheck, 提示音 ;右键菜单不打勾
+    }
+    Else
+    {
+        提示音:=1
+        IniWrite %提示音%, History.ini, Settings, 提示音 ;写入设置到ini文件
+        Menu Tray, Check, 提示音 ;右键菜单打勾
+    }
+
+    if (Base64编解码!=1) and (颜色转换!=1)
+        Hotkey !x, Off
+    Critical, Off
+return
+
+自定义:
+    if (WinExist("自定义提示音")!="")
+    {
+        WinActivate 自定义提示音
+        Return
+    }
+    Critical, On
+    FileSelectFile PromptToneFile, 3, C:\Windows\Media, 自定义提示音, *.wav
+    if (ErrorLevel!=1)
+    {
+        IniWrite %PromptToneFile%, History.ini, Settings, 提示音路径 ;写入设置到ini文件
+    }
     Critical, Off
 return
 
@@ -855,6 +903,9 @@ Return
     GoSub, 白名单
     if (白名单=0)
         Return
+
+    if (提示音=1)
+        SoundPlay %PromptToneFile%
 
     ; 等待新内容复制进来
     ClipWait 1
